@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Download, Check } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +14,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Customer, generateExcelData } from '@/utils/data';
-import { toast } from 'sonner';
 import { useToast } from '@/hooks/use-toast';
 
 interface ExcelExportProps {

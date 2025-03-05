@@ -1,22 +1,29 @@
 
-import { useState } from 'react';
+// The issue is in how the custom field values are rendered. We need to convert Date objects to strings.
+// Let's update the relevant part of the component:
+
+import React from 'react';
 import { format } from 'date-fns';
-import { Edit, Trash2, Phone, Mail, MapPin, Briefcase, Calendar } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Customer } from '@/utils/data';
+import { MoreHorizontal, User, Calendar, Phone, Mail, Briefcase, MapPin } from 'lucide-react';
 import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger
-} from '@/components/ui/alert-dialog';
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Customer } from '@/utils/data';
+import { Badge } from '@/components/ui/badge';
 
 interface CustomerCardProps {
   customer: Customer;
@@ -25,104 +32,85 @@ interface CustomerCardProps {
 }
 
 export function CustomerCard({ customer, onEdit, onDelete }: CustomerCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
-
-  const getRandomColor = (id: string) => {
-    const colors = [
-      'bg-blue-500',
-      'bg-purple-500',
-      'bg-green-500',
-      'bg-yellow-500',
-      'bg-pink-500',
-      'bg-indigo-500'
-    ];
-    const index = parseInt(id.substring(id.length - 2), 36) % colors.length;
-    return colors[index];
+  // Function to format custom field values
+  const formatCustomFieldValue = (value: string | number | Date | null): string => {
+    if (value === null || value === undefined) return '';
+    if (value instanceof Date) return format(value, 'PP');
+    return String(value);
   };
 
   return (
-    <Card 
-      className="overflow-hidden transition-all duration-300 hover:shadow-md animate-scale-in"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <CardHeader className="p-4 pb-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className={`flex h-10 w-10 rounded-full items-center justify-center text-white ${getRandomColor(customer.id)}`}>
-              {getInitials(customer.name)}
-            </div>
-            <CardTitle className="text-lg font-medium">{customer.name}</CardTitle>
-          </div>
-          <div className="flex space-x-1 opacity-0 transition-opacity duration-200" style={{ opacity: isHovered ? 1 : 0 }}>
-            <Button variant="ghost" size="icon" onClick={() => onEdit(customer)} className="h-8 w-8">
-              <Edit className="h-4 w-4" />
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete {customer.name}'s record and cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onDelete(customer.id)}>Delete</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+    <Card className="animate-fadeIn transition-all hover:shadow-md">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-xl font-medium">{customer.name}</CardTitle>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onEdit(customer)}>
+                Edit customer
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={() => onDelete(customer.id)}
+              >
+                Delete customer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </CardHeader>
-      <CardContent className="grid gap-2 p-4">
-        <div className="grid grid-cols-1 gap-2">
+        <CardDescription>
           {customer.dob && (
-            <div className="flex items-center text-sm">
-              <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center text-sm mt-1">
+              <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
               <span>{format(customer.dob, 'PP')}</span>
             </div>
           )}
-          <div className="flex items-center text-sm">
-            <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pb-3">
+        <div className="grid gap-2 text-sm">
+          <div className="flex items-center">
+            <Phone className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
             <span>{customer.phone}</span>
           </div>
-          <div className="flex items-center text-sm">
-            <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span className="truncate">{customer.email}</span>
+          <div className="flex items-center">
+            <Mail className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+            <span>{customer.email}</span>
           </div>
-          <div className="flex items-center text-sm">
-            <Briefcase className="mr-2 h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center">
+            <Briefcase className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
             <span>{customer.occupation}</span>
           </div>
-          <div className="flex items-center text-sm">
-            <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center">
+            <MapPin className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
             <span>{customer.location}</span>
           </div>
         </div>
       </CardContent>
       {customer.customFields.length > 0 && (
-        <CardFooter className="border-t bg-muted/50 px-4 py-3">
-          <div className="flex flex-wrap gap-2">
-            {customer.customFields.map(field => (
-              <Badge key={field.id} variant="outline" className="text-xs">
-                {field.name}: {field.value || 'N/A'}
-              </Badge>
-            ))}
+        <CardFooter className="border-t pt-3 pb-3">
+          <div className="w-full">
+            <h4 className="text-xs font-semibold text-muted-foreground mb-2">Additional Information</h4>
+            <div className="grid gap-2 text-sm">
+              {customer.customFields.map((field) => (
+                field.value && (
+                  <div key={field.id} className="flex items-start">
+                    <Badge variant="outline" className="mr-2 mt-0.5">
+                      {field.name}
+                    </Badge>
+                    <span>{formatCustomFieldValue(field.value)}</span>
+                  </div>
+                )
+              ))}
+            </div>
           </div>
         </CardFooter>
       )}

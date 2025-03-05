@@ -39,7 +39,7 @@ type FormValues = z.infer<typeof formSchema> & {
 
 interface CustomerFormProps {
   customer?: Customer;
-  onSubmit: (data: FormValues) => void;
+  onSubmit: (data: any) => void;
   onCancel: () => void;
 }
 
@@ -87,10 +87,12 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
       };
     });
     
-    onSubmit({
+    const formData = {
       ...data,
       customFields: processedCustomFields,
-    });
+    };
+    
+    onSubmit(formData);
   };
 
   return (

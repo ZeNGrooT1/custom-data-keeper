@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 
 // Define the customer type
@@ -236,16 +235,31 @@ export const deleteCustomField = (id: string): boolean => {
 
 // Excel export
 export const generateExcelData = (customers: Customer[]): any[] => {
-  return customers.map(customer => ({
-    'Name': customer.name,
-    'Date of Birth': customer.dob ? format(customer.dob, 'yyyy-MM-dd') : '',
-    'Phone': customer.phone,
-    'Email': customer.email,
-    'Occupation': customer.occupation,
-    'Location': customer.location,
-    ...customer.customFields.reduce((acc, field) => {
-      acc[field.name] = field.value || '';
-      return acc;
-    }, {} as Record<string, any>),
-  }));
+  return customers.map(customer => {
+    // Start with the standard fields
+    const baseData: Record<string, any> = {
+      'Name': customer.name,
+      'Date of Birth': customer.dob ? format(customer.dob, 'yyyy-MM-dd') : '',
+      'Phone': customer.phone,
+      'Email': customer.email,
+      'Occupation': customer.occupation,
+      'Location': customer.location,
+    };
+    
+    // Add custom fields with proper handling
+    customer.customFields.forEach(field => {
+      if (field.value !== undefined && field.value !== null) {
+        // Format dates if needed
+        if (field.type === 'date' && field.value instanceof Date) {
+          baseData[field.name] = format(field.value as Date, 'yyyy-MM-dd');
+        } else {
+          baseData[field.name] = field.value;
+        }
+      } else {
+        baseData[field.name] = '';
+      }
+    });
+    
+    return baseData;
+  });
 };
