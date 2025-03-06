@@ -1,11 +1,21 @@
 
 import { useState } from 'react';
-import { Search, UserPlus, FilePlus, Download, Menu } from 'lucide-react';
+import { Search, UserPlus, FilePlus, Download, Menu, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface NavbarProps {
   onSearch: (query: string) => void;
@@ -26,6 +36,7 @@ export function Navbar({
 }: NavbarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const isMobile = useIsMobile();
+  const { user, logout } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +52,38 @@ export function Navbar({
       onSearch(value);
     }
   };
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+  };
+
+  const UserMenu = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="rounded-full">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <div className="flex items-center justify-start gap-2 p-2">
+          <div className="flex flex-col space-y-0.5 leading-none">
+            <p className="font-medium text-sm">{user?.name}</p>
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
+          </div>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleLogout}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Log out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   const MobileMenu = () => (
     <Sheet>
@@ -71,6 +114,11 @@ export function Navbar({
               </TabsList>
             </Tabs>
           </div>
+          <DropdownMenuSeparator />
+          <Button className="justify-start" variant="ghost" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Log out
+          </Button>
         </div>
       </SheetContent>
     </Sheet>
@@ -122,6 +170,8 @@ export function Navbar({
               </Button>
             </div>
           )}
+          
+          <UserMenu />
         </div>
       </div>
     </div>
