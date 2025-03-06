@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '@/services/api';
 
 interface User {
   id: string;
@@ -30,38 +31,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(JSON.parse(savedUser));
       } catch (e) {
         localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_token');
       }
     }
     setIsLoading(false);
   }, []);
 
-  // Mock login function - in a real app, this would call an API
   const login = async (email: string, password: string) => {
-    // Simple validation
-    if (!email || !password) return false;
-    
-    // For demo, we'll accept any email that looks valid with password "password"
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email) || password !== "password") {
+    try {
+      // Call the login API
+      const response = await authService.login(email, password);
+      setUser(response.user);
+      return true;
+    } catch (error) {
+      console.error('Login failed:', error);
       return false;
     }
-
-    // Mock successful login
-    const newUser: User = {
-      id: '1',
-      name: email.split('@')[0], // Use part of email as name
-      email,
-      role: 'admin',
-    };
-
-    setUser(newUser);
-    localStorage.setItem('auth_user', JSON.stringify(newUser));
-    return true;
   };
 
   const logout = () => {
+    authService.logout();
     setUser(null);
-    localStorage.removeItem('auth_user');
   };
 
   return (
