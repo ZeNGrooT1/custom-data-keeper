@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '@/services/api';
+import { toast } from 'sonner';
 
 interface User {
   id: string;
@@ -18,6 +19,14 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Mock user for development without backend
+const MOCK_USER: User = {
+  id: '1',
+  name: 'Admin User',
+  email: 'admin@example.com',
+  role: 'admin'
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -45,12 +54,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (error) {
       console.error('Login failed:', error);
+      
+      // For development: use mock authentication if backend is not available
+      if (email === 'admin@example.com' && password === 'password') {
+        console.log('Using mock authentication');
+        // Store mock data
+        localStorage.setItem('auth_user', JSON.stringify(MOCK_USER));
+        localStorage.setItem('auth_token', 'mock-token-for-development');
+        setUser(MOCK_USER);
+        toast.success('Logged in with mock user');
+        return true;
+      }
+      
       return false;
     }
   };
 
   const logout = () => {
-    authService.logout();
+    try {
+      authService.logout();
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    }
+    // Always clear local storage and state
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_token');
     setUser(null);
   };
 
