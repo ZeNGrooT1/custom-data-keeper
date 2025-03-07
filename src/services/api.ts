@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -72,7 +73,7 @@ const mockCustomers = [
     email: 'john.doe@example.com',
     occupation: 'Software Engineer',
     location: 'New York, NY',
-    customFields: {}
+    customFields: []
   },
   {
     id: '2',
@@ -82,16 +83,46 @@ const mockCustomers = [
     email: 'jane.smith@example.com',
     occupation: 'Marketing Manager',
     location: 'San Francisco, CA',
-    customFields: {}
+    customFields: []
   }
 ];
+
+// Parse custom field values from API response
+const parseCustomFields = (customer) => {
+  if (customer.customFields) {
+    // If customFields is a string, try to parse it
+    if (typeof customer.customFields === 'string') {
+      try {
+        customer.customFields = JSON.parse(customer.customFields);
+      } catch (error) {
+        console.warn('Failed to parse custom fields for customer:', customer.id);
+        customer.customFields = [];
+      }
+    }
+    
+    // Ensure customFields is an array
+    if (!Array.isArray(customer.customFields)) {
+      customer.customFields = [];
+    }
+  } else {
+    customer.customFields = [];
+  }
+  
+  // Convert date strings to Date objects
+  if (customer.dob && typeof customer.dob === 'string') {
+    customer.dob = new Date(customer.dob);
+  }
+  
+  return customer;
+};
 
 // Customer Service
 export const customerService = {
   getAll: async () => {
     try {
       const response = await api.get('/customers');
-      return response.data;
+      // Process each customer to ensure proper customFields format
+      return response.data.map(customer => parseCustomFields(customer));
     } catch (error) {
       console.error('Error fetching customers, using mock data:', error);
       
@@ -107,7 +138,7 @@ export const customerService = {
   getById: async (id: string) => {
     try {
       const response = await api.get(`/customers/${id}`);
-      return response.data;
+      return parseCustomFields(response.data);
     } catch (error) {
       // For development: return mock data if backend is not available
       if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
@@ -118,12 +149,24 @@ export const customerService = {
     }
   },
   create: async (customerData: any) => {
-    const response = await api.post('/customers', customerData);
-    return response.data;
+    // Ensure customFields is properly formatted before sending
+    const processedData = {
+      ...customerData,
+      customFields: Array.isArray(customerData.customFields) ? customerData.customFields : []
+    };
+    
+    const response = await api.post('/customers', processedData);
+    return parseCustomFields(response.data);
   },
   update: async (id: string, customerData: any) => {
-    const response = await api.put(`/customers/${id}`, customerData);
-    return response.data;
+    // Ensure customFields is properly formatted before sending
+    const processedData = {
+      ...customerData,
+      customFields: Array.isArray(customerData.customFields) ? customerData.customFields : []
+    };
+    
+    const response = await api.put(`/customers/${id}`, processedData);
+    return parseCustomFields(response.data);
   },
   delete: async (id: string) => {
     await api.delete(`/customers/${id}`);
@@ -132,7 +175,8 @@ export const customerService = {
   search: async (query: string) => {
     try {
       const response = await api.get(`/customers/search/${query}`);
-      return response.data;
+      // Process each customer to ensure proper customFields format
+      return response.data.map(customer => parseCustomFields(customer));
     } catch (error) {
       // For development: filter mock data if backend is not available
       if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
