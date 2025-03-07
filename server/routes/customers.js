@@ -1,8 +1,26 @@
-
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
 const pool = require('../db');
+
+// Format custom fields from JSON object to array
+const formatCustomFields = (customFieldsData) => {
+  if (!customFieldsData) return [];
+  
+  try {
+    // Parse the JSON string from MySQL
+    const parsed = typeof customFieldsData === 'string' ? JSON.parse(customFieldsData) : customFieldsData;
+    
+    // Convert object {name: value} to array [{name, value}]
+    return Object.entries(parsed).map(([name, value]) => ({
+      name,
+      value
+    }));
+  } catch (error) {
+    console.warn('Failed to parse custom fields:', customFieldsData, error);
+    return [];
+  }
+};
 
 // Get all customers
 router.get('/', async (req, res) => {
@@ -17,7 +35,6 @@ router.get('/', async (req, res) => {
       ORDER BY c.created_at DESC
     `);
     
-    // Format the results
     const formattedCustomers = customers.map(customer => ({
       id: customer.id,
       name: customer.name,
@@ -28,7 +45,7 @@ router.get('/', async (req, res) => {
       location: customer.location,
       createdAt: customer.created_at,
       updatedAt: customer.updated_at,
-      customFields: customer.custom_fields ? JSON.parse(customer.custom_fields) : {}
+      customFields: formatCustomFields(customer.custom_fields)
     }));
     
     res.json(formattedCustomers);
@@ -47,7 +64,6 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Customer not found' });
     }
     
-    // Get custom field values
     const [fieldValues] = await pool.query(`
       SELECT cf.id, cf.name, cf.type, cfv.value
       FROM customer_field_values cfv
@@ -56,9 +72,7 @@ router.get('/:id', async (req, res) => {
     `, [req.params.id]);
     
     const customFields = fieldValues.map(field => ({
-      id: field.id,
       name: field.name,
-      type: field.type,
       value: field.value
     }));
     
@@ -76,12 +90,11 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   const { name, dob, phone, email, occupation, location, customFields } = req.body;
   
-  // Format the date to YYYY-MM-DD format for MySQL
   let formattedDob = null;
   if (dob) {
     const date = new Date(dob);
     if (!isNaN(date.getTime())) {
-      formattedDob = date.toISOString().split('T')[0]; // Extract just the YYYY-MM-DD part
+      formattedDob = date.toISOString().split('T')[0];
     }
   }
   
@@ -90,7 +103,6 @@ router.post('/', async (req, res) => {
   try {
     await connection.beginTransaction();
     
-    // Insert customer with the formatted date
     const [result] = await connection.query(
       'INSERT INTO customers (name, dob, phone, email, occupation, location) VALUES (?, ?, ?, ?, ?, ?)',
       [name, formattedDob, phone, email, occupation, location]
@@ -98,14 +110,12 @@ router.post('/', async (req, res) => {
     
     const customerId = result.insertId;
     
-    // Insert custom field values - ensure field_id is numeric and valid
     if (customFields && Array.isArray(customFields) && customFields.length > 0) {
-      // Filter out invalid field IDs and convert to integers
       const validFieldValues = customFields
         .filter(field => field && field.id && !isNaN(parseInt(field.id, 10)))
         .map(field => [
-          customerId, 
-          parseInt(field.id, 10), // Convert field id to integer
+          customerId,
+          parseInt(field.id, 10),
           field.value
         ]);
       
@@ -145,12 +155,11 @@ router.put('/:id', async (req, res) => {
   const { name, dob, phone, email, occupation, location, customFields } = req.body;
   const customerId = req.params.id;
   
-  // Format the date to YYYY-MM-DD format for MySQL
   let formattedDob = null;
   if (dob) {
     const date = new Date(dob);
     if (!isNaN(date.getTime())) {
-      formattedDob = date.toISOString().split('T')[0]; // Extract just the YYYY-MM-DD part
+      formattedDob = date.toISOString().split('T')[0];
     }
   }
   
@@ -159,23 +168,19 @@ router.put('/:id', async (req, res) => {
   try {
     await connection.beginTransaction();
     
-    // Update customer with the formatted date
     await connection.query(
       'UPDATE customers SET name = ?, dob = ?, phone = ?, email = ?, occupation = ?, location = ?, updated_at = NOW() WHERE id = ?',
       [name, formattedDob, phone, email, occupation, location, customerId]
     );
     
-    // Delete existing custom field values
     await connection.query('DELETE FROM customer_field_values WHERE customer_id = ?', [customerId]);
     
-    // Insert new custom field values - ensure field_id is numeric and valid
     if (customFields && Array.isArray(customFields) && customFields.length > 0) {
-      // Filter out invalid field IDs and convert to integers
       const validFieldValues = customFields
         .filter(field => field && field.id && !isNaN(parseInt(field.id, 10)))
         .map(field => [
-          customerId, 
-          parseInt(field.id, 10), // Convert field id to integer
+          customerId,
+          parseInt(field.id, 10),
           field.value
         ]);
       
@@ -216,10 +221,7 @@ router.delete('/:id', async (req, res) => {
   try {
     await connection.beginTransaction();
     
-    // Delete custom field values
     await connection.query('DELETE FROM customer_field_values WHERE customer_id = ?', [req.params.id]);
-    
-    // Delete customer
     await connection.query('DELETE FROM customers WHERE id = ?', [req.params.id]);
     
     await connection.commit();
@@ -250,7 +252,6 @@ router.get('/search/:query', async (req, res) => {
       ORDER BY c.created_at DESC
     `, [searchQuery, searchQuery, searchQuery]);
     
-    // Format the results
     const formattedCustomers = customers.map(customer => ({
       id: customer.id,
       name: customer.name,
@@ -261,7 +262,7 @@ router.get('/search/:query', async (req, res) => {
       location: customer.location,
       createdAt: customer.created_at,
       updatedAt: customer.updated_at,
-      customFields: customer.custom_fields ? JSON.parse(customer.custom_fields) : {}
+      customFields: formatCustomFields(customer.custom_fields)
     }));
     
     res.json(formattedCustomers);

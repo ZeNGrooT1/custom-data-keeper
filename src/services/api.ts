@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -31,7 +30,6 @@ api.interceptors.response.use(
   (error) => {
     console.error('API Error:', error);
     
-    // Create a more user-friendly error message
     let errorMessage = 'An unexpected error occurred';
     
     if (error.code === 'ECONNABORTED') {
@@ -39,7 +37,6 @@ api.interceptors.response.use(
     } else if (error.code === 'ERR_NETWORK') {
       errorMessage = 'Network error. Make sure your backend server is running';
     } else if (error.response) {
-      // Server responded with an error status
       const status = error.response.status;
       const serverMessage = error.response.data?.error || error.response.data?.message;
       
@@ -54,7 +51,6 @@ api.interceptors.response.use(
       }
     }
     
-    // Show toast for most errors except auth errors (those are handled separately)
     if (!error.config?.url?.includes('/auth/')) {
       toast.error(errorMessage);
     }
@@ -63,7 +59,7 @@ api.interceptors.response.use(
   }
 );
 
-// Mock data for development when backend is unavailable
+// Mock data for development
 const mockCustomers = [
   {
     id: '1',
@@ -89,31 +85,25 @@ const mockCustomers = [
 
 // Parse custom field values from API response
 const parseCustomFields = (customer) => {
-  if (customer.customFields) {
-    // If customFields is a string, try to parse it
-    if (typeof customer.customFields === 'string') {
-      try {
-        customer.customFields = JSON.parse(customer.customFields);
-      } catch (error) {
-        console.warn('Failed to parse custom fields for customer:', customer.id);
-        customer.customFields = [];
-      }
-    }
-    
-    // Ensure customFields is an array
-    if (!Array.isArray(customer.customFields)) {
-      customer.customFields = [];
-    }
-  } else {
-    customer.customFields = [];
+  if (!customer) {
+    return { customFields: [], dob: null };
   }
-  
-  // Convert date strings to Date objects
-  if (customer.dob && typeof customer.dob === 'string') {
-    customer.dob = new Date(customer.dob);
+
+  let customFields = customer.customFields || [];
+  if (!Array.isArray(customFields)) {
+    customFields = [];
   }
-  
-  return customer;
+
+  let dob = customer.dob;
+  if (dob && typeof dob === 'string') {
+    dob = new Date(dob);
+  }
+
+  return {
+    ...customer,
+    customFields,
+    dob
+  };
 };
 
 // Customer Service
@@ -121,26 +111,21 @@ export const customerService = {
   getAll: async () => {
     try {
       const response = await api.get('/customers');
-      // Process each customer to ensure proper customFields format
       return response.data.map(customer => parseCustomFields(customer));
     } catch (error) {
       console.error('Error fetching customers, using mock data:', error);
-      
-      // For development: return mock data if backend is not available
       if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
         console.log('Using mock customer data');
         return mockCustomers;
       }
-      
       throw error;
     }
   },
-  getById: async (id: string) => {
+  getById: async (id) => {
     try {
       const response = await api.get(`/customers/${id}`);
       return parseCustomFields(response.data);
     } catch (error) {
-      // For development: return mock data if backend is not available
       if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
         const mockCustomer = mockCustomers.find(c => c.id === id);
         if (mockCustomer) return mockCustomer;
@@ -148,8 +133,7 @@ export const customerService = {
       throw error;
     }
   },
-  create: async (customerData: any) => {
-    // Ensure customFields is properly formatted before sending
+  create: async (customerData) => {
     const processedData = {
       ...customerData,
       customFields: Array.isArray(customerData.customFields) ? customerData.customFields : []
@@ -158,8 +142,7 @@ export const customerService = {
     const response = await api.post('/customers', processedData);
     return parseCustomFields(response.data);
   },
-  update: async (id: string, customerData: any) => {
-    // Ensure customFields is properly formatted before sending
+  update: async (id, customerData) => {
     const processedData = {
       ...customerData,
       customFields: Array.isArray(customerData.customFields) ? customerData.customFields : []
@@ -168,17 +151,15 @@ export const customerService = {
     const response = await api.put(`/customers/${id}`, processedData);
     return parseCustomFields(response.data);
   },
-  delete: async (id: string) => {
+  delete: async (id) => {
     await api.delete(`/customers/${id}`);
     return true;
   },
-  search: async (query: string) => {
+  search: async (query) => {
     try {
       const response = await api.get(`/customers/search/${query}`);
-      // Process each customer to ensure proper customFields format
       return response.data.map(customer => parseCustomFields(customer));
     } catch (error) {
-      // For development: filter mock data if backend is not available
       if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
         const filtered = mockCustomers.filter(c => 
           c.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -198,15 +179,15 @@ export const customFieldService = {
     const response = await api.get('/custom-fields');
     return response.data;
   },
-  create: async (fieldData: any) => {
+  create: async (fieldData) => {
     const response = await api.post('/custom-fields', fieldData);
     return response.data;
   },
-  update: async (id: string, fieldData: any) => {
+  update: async (id, fieldData) => {
     const response = await api.put(`/custom-fields/${id}`, fieldData);
     return response.data;
   },
-  delete: async (id: string) => {
+  delete: async (id) => {
     await api.delete(`/custom-fields/${id}`);
     return true;
   }
@@ -214,9 +195,8 @@ export const customFieldService = {
 
 // Auth Service
 export const authService = {
-  login: async (email: string, password: string) => {
+  login: async (email, password) => {
     const response = await api.post('/auth/login', { email, password });
-    // Save token in localStorage
     localStorage.setItem('auth_token', response.data.token);
     localStorage.setItem('auth_user', JSON.stringify(response.data.user));
     return response.data;
@@ -225,7 +205,7 @@ export const authService = {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
   },
-  register: async (userData: any) => {
+  register: async (userData) => {
     const response = await api.post('/auth/register', userData);
     localStorage.setItem('auth_token', response.data.token);
     localStorage.setItem('auth_user', JSON.stringify(response.data.user));
