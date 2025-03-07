@@ -98,13 +98,21 @@ router.post('/', async (req, res) => {
     
     const customerId = result.insertId;
     
-    // Insert custom field values
+    // Insert custom field values - ensure field_id is numeric 
     if (customFields && customFields.length > 0) {
-      const fieldValues = customFields.map(field => [customerId, field.id, field.value]);
-      await connection.query(
-        'INSERT INTO customer_field_values (customer_id, field_id, value) VALUES ?',
-        [fieldValues]
-      );
+      // Prepare field values ensuring field_id is parsed as an integer
+      const fieldValues = customFields.map(field => [
+        customerId, 
+        parseInt(field.id, 10), // Convert field id to integer
+        field.value
+      ]);
+      
+      if (fieldValues.length > 0) {
+        await connection.query(
+          'INSERT INTO customer_field_values (customer_id, field_id, value) VALUES ?',
+          [fieldValues]
+        );
+      }
     }
     
     await connection.commit();
@@ -158,13 +166,21 @@ router.put('/:id', async (req, res) => {
     // Delete existing custom field values
     await connection.query('DELETE FROM customer_field_values WHERE customer_id = ?', [customerId]);
     
-    // Insert new custom field values
+    // Insert new custom field values - ensure field_id is numeric
     if (customFields && customFields.length > 0) {
-      const fieldValues = customFields.map(field => [customerId, field.id, field.value]);
-      await connection.query(
-        'INSERT INTO customer_field_values (customer_id, field_id, value) VALUES ?',
-        [fieldValues]
-      );
+      // Prepare field values ensuring field_id is parsed as an integer
+      const fieldValues = customFields.map(field => [
+        customerId, 
+        parseInt(field.id, 10), // Convert field id to integer
+        field.value
+      ]);
+      
+      if (fieldValues.length > 0) {
+        await connection.query(
+          'INSERT INTO customer_field_values (customer_id, field_id, value) VALUES ?',
+          [fieldValues]
+        );
+      }
     }
     
     await connection.commit();
