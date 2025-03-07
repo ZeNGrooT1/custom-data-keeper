@@ -76,15 +76,24 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   const { name, dob, phone, email, occupation, location, customFields } = req.body;
   
+  // Format the date to YYYY-MM-DD format for MySQL
+  let formattedDob = null;
+  if (dob) {
+    const date = new Date(dob);
+    if (!isNaN(date.getTime())) {
+      formattedDob = date.toISOString().split('T')[0]; // Extract just the YYYY-MM-DD part
+    }
+  }
+  
   const connection = await pool.getConnection();
   
   try {
     await connection.beginTransaction();
     
-    // Insert customer
+    // Insert customer with the formatted date
     const [result] = await connection.query(
       'INSERT INTO customers (name, dob, phone, email, occupation, location) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, dob, phone, email, occupation, location]
+      [name, formattedDob, phone, email, occupation, location]
     );
     
     const customerId = result.insertId;
@@ -115,7 +124,7 @@ router.post('/', async (req, res) => {
   } catch (error) {
     await connection.rollback();
     console.error('Error creating customer:', error);
-    res.status(500).json({ error: 'Failed to create customer' });
+    res.status(500).json({ error: 'Failed to create customer', details: error.message });
   } finally {
     connection.release();
   }
@@ -126,15 +135,24 @@ router.put('/:id', async (req, res) => {
   const { name, dob, phone, email, occupation, location, customFields } = req.body;
   const customerId = req.params.id;
   
+  // Format the date to YYYY-MM-DD format for MySQL
+  let formattedDob = null;
+  if (dob) {
+    const date = new Date(dob);
+    if (!isNaN(date.getTime())) {
+      formattedDob = date.toISOString().split('T')[0]; // Extract just the YYYY-MM-DD part
+    }
+  }
+  
   const connection = await pool.getConnection();
   
   try {
     await connection.beginTransaction();
     
-    // Update customer
+    // Update customer with the formatted date
     await connection.query(
       'UPDATE customers SET name = ?, dob = ?, phone = ?, email = ?, occupation = ?, location = ?, updated_at = NOW() WHERE id = ?',
-      [name, dob, phone, email, occupation, location, customerId]
+      [name, formattedDob, phone, email, occupation, location, customerId]
     );
     
     // Delete existing custom field values
@@ -165,7 +183,7 @@ router.put('/:id', async (req, res) => {
   } catch (error) {
     await connection.rollback();
     console.error('Error updating customer:', error);
-    res.status(500).json({ error: 'Failed to update customer' });
+    res.status(500).json({ error: 'Failed to update customer', details: error.message });
   } finally {
     connection.release();
   }
