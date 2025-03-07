@@ -66,11 +66,13 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
     setCustomFields(fields);
     
     // If editing an existing customer, set custom field values
-    if (customer?.customFields.length) {
+    if (customer?.customFields?.length) {
       const customFieldValues: Record<string, string | number | null> = {};
       
       customer.customFields.forEach(field => {
-        customFieldValues[field.id] = field.value as string | number | null;
+        if (field && field.id) {
+          customFieldValues[field.id] = field.value as string | number | null;
+        }
       });
       
       form.setValue('customFields', customFieldValues);
@@ -80,18 +82,23 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
   // Handle form submission
   const handleFormSubmit = (data: FormValues) => {
     // Process custom fields before sending data
-    const processedCustomFields: CustomField[] = customFields.map(field => {
-      return {
-        ...field,
-        value: data.customFields?.[field.id] || null,
-      };
-    });
+    const processedCustomFields = customFields
+      .filter(field => field && field.id)
+      .map(field => {
+        return {
+          id: field.id.toString(), // Ensure id is a string for consistency
+          name: field.name,
+          type: field.type,
+          value: data.customFields?.[field.id] || null,
+        };
+      });
     
     const formData = {
       ...data,
       customFields: processedCustomFields,
     };
     
+    console.log('Submitting form data:', formData);
     onSubmit(formData);
   };
 

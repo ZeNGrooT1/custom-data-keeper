@@ -98,19 +98,21 @@ router.post('/', async (req, res) => {
     
     const customerId = result.insertId;
     
-    // Insert custom field values - ensure field_id is numeric 
-    if (customFields && customFields.length > 0) {
-      // Prepare field values ensuring field_id is parsed as an integer
-      const fieldValues = customFields.map(field => [
-        customerId, 
-        parseInt(field.id, 10), // Convert field id to integer
-        field.value
-      ]);
+    // Insert custom field values - ensure field_id is numeric and valid
+    if (customFields && Array.isArray(customFields) && customFields.length > 0) {
+      // Filter out invalid field IDs and convert to integers
+      const validFieldValues = customFields
+        .filter(field => field && field.id && !isNaN(parseInt(field.id, 10)))
+        .map(field => [
+          customerId, 
+          parseInt(field.id, 10), // Convert field id to integer
+          field.value
+        ]);
       
-      if (fieldValues.length > 0) {
+      if (validFieldValues.length > 0) {
         await connection.query(
           'INSERT INTO customer_field_values (customer_id, field_id, value) VALUES ?',
-          [fieldValues]
+          [validFieldValues]
         );
       }
     }
@@ -166,19 +168,21 @@ router.put('/:id', async (req, res) => {
     // Delete existing custom field values
     await connection.query('DELETE FROM customer_field_values WHERE customer_id = ?', [customerId]);
     
-    // Insert new custom field values - ensure field_id is numeric
-    if (customFields && customFields.length > 0) {
-      // Prepare field values ensuring field_id is parsed as an integer
-      const fieldValues = customFields.map(field => [
-        customerId, 
-        parseInt(field.id, 10), // Convert field id to integer
-        field.value
-      ]);
+    // Insert new custom field values - ensure field_id is numeric and valid
+    if (customFields && Array.isArray(customFields) && customFields.length > 0) {
+      // Filter out invalid field IDs and convert to integers
+      const validFieldValues = customFields
+        .filter(field => field && field.id && !isNaN(parseInt(field.id, 10)))
+        .map(field => [
+          customerId, 
+          parseInt(field.id, 10), // Convert field id to integer
+          field.value
+        ]);
       
-      if (fieldValues.length > 0) {
+      if (validFieldValues.length > 0) {
         await connection.query(
           'INSERT INTO customer_field_values (customer_id, field_id, value) VALUES ?',
-          [fieldValues]
+          [validFieldValues]
         );
       }
     }
