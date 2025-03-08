@@ -1,3 +1,4 @@
+
 import { format } from "date-fns";
 
 // Define the customer type
@@ -234,7 +235,7 @@ export const deleteCustomField = (id: string): boolean => {
 };
 
 // Excel export
-export const generateExcelData = (customers: Customer[]): any[] => {
+export const generateExcelData = (customers: Customer[], customFields: CustomField[] = []): any[] => {
   return customers.map(customer => {
     // Start with the standard fields
     const baseData: Record<string, any> = {
@@ -256,6 +257,14 @@ export const generateExcelData = (customers: Customer[]): any[] => {
           baseData[field.name] = field.value;
         }
       } else {
+        baseData[field.name] = '';
+      }
+    });
+    
+    // Add any custom fields from the system that the customer doesn't have already
+    customFields.forEach(field => {
+      // Only add if this field doesn't already exist in the customer's custom fields
+      if (!customer.customFields.some(cf => cf.id === field.id)) {
         baseData[field.name] = '';
       }
     });

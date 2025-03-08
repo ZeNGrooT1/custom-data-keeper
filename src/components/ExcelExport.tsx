@@ -13,7 +13,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Customer, generateExcelData } from '@/utils/data';
+import { Customer, CustomField, generateExcelData } from '@/utils/data';
 import { useToast } from '@/hooks/use-toast';
 import { customFieldService } from '@/services/api';
 
@@ -27,7 +27,7 @@ export function ExcelExport({ isOpen, onClose, customers }: ExcelExportProps) {
   const [fileName, setFileName] = useState('customers_export');
   const [exportAll, setExportAll] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [customFields, setCustomFields] = useState<any[]>([]);
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
