@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Customer, generateExcelData } from '@/utils/data';
 import { useToast } from '@/hooks/use-toast';
+import { customFieldService } from '@/services/api';
 
 interface ExcelExportProps {
   isOpen: boolean;
@@ -26,17 +27,33 @@ export function ExcelExport({ isOpen, onClose, customers }: ExcelExportProps) {
   const [fileName, setFileName] = useState('customers_export');
   const [exportAll, setExportAll] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [customFields, setCustomFields] = useState<any[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchCustomFields = async () => {
+      try {
+        const fields = await customFieldService.getAll();
+        setCustomFields(fields);
+      } catch (error) {
+        console.error('Error loading custom fields for export:', error);
+      }
+    };
+
+    if (isOpen) {
+      fetchCustomFields();
+    }
+  }, [isOpen]);
 
   const handleExport = async () => {
     try {
       setLoading(true);
 
-      // Generate Excel data from the customers
-      const data = generateExcelData(customers);
+      // Generate Excel data from the customers including custom fields
+      const data = generateExcelData(customers, customFields);
       
       // Convert to CSV
-      const headers = Object.keys(data[0]);
+      const headers = Object.keys(data[0] || {});
       const csvContent = [
         headers.join(','),
         ...data.map(row => 

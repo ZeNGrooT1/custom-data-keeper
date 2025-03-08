@@ -83,6 +83,28 @@ const mockCustomers = [
   }
 ];
 
+// Default custom fields for development
+const mockCustomFields = [
+  {
+    id: '1',
+    name: 'Notes',
+    type: 'text',
+    options: null
+  },
+  {
+    id: '2',
+    name: 'Customer Type',
+    type: 'select',
+    options: ['Regular', 'VIP', 'Corporate']
+  },
+  {
+    id: '3',
+    name: 'Annual Revenue',
+    type: 'number',
+    options: null
+  }
+];
+
 // Parse custom field values from API response
 const parseCustomFields = (customer) => {
   if (!customer) {
@@ -103,6 +125,28 @@ const parseCustomFields = (customer) => {
     ...customer,
     customFields,
     dob
+  };
+};
+
+// Parse options for select fields
+const parseCustomFieldOptions = (field) => {
+  if (!field) return field;
+  
+  let options = field.options;
+  
+  // If options is a string, try to parse it as JSON
+  if (options && typeof options === 'string') {
+    try {
+      options = JSON.parse(options);
+    } catch (e) {
+      console.warn(`Failed to parse options for field ${field.name}:`, e);
+      options = [];
+    }
+  }
+  
+  return {
+    ...field,
+    options
   };
 };
 
@@ -176,8 +220,19 @@ export const customerService = {
 // Custom Fields Service
 export const customFieldService = {
   getAll: async () => {
-    const response = await api.get('/custom-fields');
-    return response.data;
+    try {
+      const response = await api.get('/custom-fields');
+      return response.data.map(field => parseCustomFieldOptions(field));
+    } catch (error) {
+      console.error('Error fetching custom fields, using default fields:', error);
+      
+      if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
+        console.log('Using default custom fields');
+        return mockCustomFields;
+      }
+      
+      throw error;
+    }
   },
   create: async (fieldData) => {
     const response = await api.post('/custom-fields', fieldData);
