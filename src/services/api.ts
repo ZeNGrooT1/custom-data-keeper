@@ -176,27 +176,8 @@ export const customerService = {
 // Custom Fields Service
 export const customFieldService = {
   getAll: async () => {
-    try {
-      const response = await api.get('/custom-fields');
-      return response.data.map((field: any) => ({
-        ...field,
-        // Ensure the options is an array if the field is a select type
-        options: field.type === 'select' && field.options 
-          ? typeof field.options === 'string' 
-            ? JSON.parse(field.options) 
-            : field.options
-          : undefined
-      }));
-    } catch (error) {
-      console.error('Error fetching custom fields, using default fields:', error);
-      if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
-        console.log('Using default custom fields');
-        // Import from utils/data to avoid circular dependency
-        const { defaultCustomFields } = require('@/utils/data');
-        return defaultCustomFields;
-      }
-      throw error;
-    }
+    const response = await api.get('/custom-fields');
+    return response.data;
   },
   create: async (fieldData) => {
     const response = await api.post('/custom-fields', fieldData);
