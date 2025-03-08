@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dialog';
 import { Customer, generateExcelData } from '@/utils/data';
 import { useToast } from '@/hooks/use-toast';
+import { customFieldService } from '@/services/api';
+import { useQuery } from '@tanstack/react-query';
 
 interface ExcelExportProps {
   isOpen: boolean;
@@ -28,12 +30,19 @@ export function ExcelExport({ isOpen, onClose, customers }: ExcelExportProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Fetch custom fields to ensure we have the latest definitions
+  const { data: customFields = [] } = useQuery({
+    queryKey: ['custom-fields'],
+    queryFn: customFieldService.getAll,
+    enabled: isOpen, // Only fetch when dialog is open
+  });
+
   const handleExport = async () => {
     try {
       setLoading(true);
 
-      // Generate Excel data from the customers
-      const data = generateExcelData(customers);
+      // Generate Excel data from the customers, passing custom fields
+      const data = generateExcelData(customers, customFields);
       
       // Convert to CSV
       const headers = Object.keys(data[0]);

@@ -234,7 +234,7 @@ export const deleteCustomField = (id: string): boolean => {
 };
 
 // Excel export
-export const generateExcelData = (customers: Customer[]): any[] => {
+export const generateExcelData = (customers: Customer[], customFields: CustomField[] = []): any[] => {
   return customers.map(customer => {
     // Start with the standard fields
     const baseData: Record<string, any> = {
@@ -246,18 +246,26 @@ export const generateExcelData = (customers: Customer[]): any[] => {
       'Location': customer.location,
     };
     
-    // Add custom fields with proper handling
+    // Create a map of custom field IDs to their values for easier lookup
+    const customerFieldMap: Record<string, any> = {};
     customer.customFields.forEach(field => {
-      if (field.value !== undefined && field.value !== null) {
-        // Format dates if needed
-        if (field.type === 'date' && field.value instanceof Date) {
-          baseData[field.name] = format(field.value as Date, 'yyyy-MM-dd');
-        } else {
-          baseData[field.name] = field.value;
+      customerFieldMap[field.id] = field.value;
+    });
+    
+    // Add all custom fields, even if this customer doesn't have a value for them
+    customFields.forEach(field => {
+      let value = customerFieldMap[field.id];
+      
+      // Format the value based on its type
+      if (value !== undefined && value !== null) {
+        if (field.type === 'date' && value instanceof Date) {
+          value = format(value as Date, 'yyyy-MM-dd');
         }
       } else {
-        baseData[field.name] = '';
+        value = '';
       }
+      
+      baseData[field.name] = value;
     });
     
     return baseData;
