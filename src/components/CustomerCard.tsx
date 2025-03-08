@@ -1,7 +1,4 @@
 
-// The issue is in how the custom field values are rendered. We need to convert Date objects to strings.
-// Let's update the relevant part of the component:
-
 import React from 'react';
 import { format } from 'date-fns';
 import { MoreHorizontal, User, Calendar, Phone, Mail, Briefcase, MapPin } from 'lucide-react';
@@ -68,10 +65,10 @@ export function CustomerCard({ customer, onEdit, onDelete }: CustomerCardProps) 
         </div>
         <CardDescription>
           {customer.dob && (
-            <div className="flex items-center text-sm mt-1">
+            <span className="flex items-center text-sm mt-1">
               <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
               <span>{format(customer.dob, 'PP')}</span>
-            </div>
+            </span>
           )}
         </CardDescription>
       </CardHeader>
