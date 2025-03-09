@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -49,8 +48,8 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { CustomField, getCustomFields, addCustomField, deleteCustomField } from '@/utils/data';
+import { customFieldService } from '@/services/api';
 
-// Define the form schema with zod
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Field name must be at least 2 characters' }),
   type: z.enum(['text', 'number', 'date', 'select'], { 
@@ -70,7 +69,6 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
   const [fields, setFields] = useState<CustomField[]>([]);
   const [showAddField, setShowAddField] = useState(false);
 
-  // Initialize the form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -80,7 +78,6 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
     },
   });
 
-  // Load fields on mount
   useEffect(() => {
     if (isOpen) {
       const loadFields = async () => {
@@ -96,14 +93,12 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
     }
   }, [isOpen]);
 
-  // Reset form when dialog closes
   useEffect(() => {
     if (!showAddField) {
       form.reset();
     }
   }, [showAddField, form]);
 
-  // Handle form submission
   const handleFormSubmit = async (data: FormValues) => {
     try {
       const options = data.type === 'select' && data.options
@@ -124,7 +119,6 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
     }
   };
 
-  // Handle field deletion
   const handleDeleteField = async (id: string) => {
     try {
       await customFieldService.delete(id);
@@ -222,7 +216,6 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
           </div>
         </div>
         
-        {/* Add Field Dialog */}
         <Dialog open={showAddField} onOpenChange={setShowAddField}>
           <DialogContent className="animate-slide-in">
             <DialogHeader>
