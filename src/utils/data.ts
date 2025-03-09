@@ -1,3 +1,4 @@
+
 import { format } from "date-fns";
 
 // Define the customer type
@@ -234,7 +235,11 @@ export const deleteCustomField = (id: string): boolean => {
 };
 
 // Excel export
-export const generateExcelData = (customers: Customer[], customFields: CustomField[] = []): any[] => {
+export const generateExcelData = (
+  customers: Customer[], 
+  customFields: CustomField[] = [], 
+  onlyIncludeAssociatedFields: boolean = false
+): any[] => {
   // Create a map of field IDs to names for easier lookup
   const fieldMap = new Map(
     customFields.map(field => [field.id, field])
@@ -252,25 +257,39 @@ export const generateExcelData = (customers: Customer[], customFields: CustomFie
     };
     
     // Create a map of the customer's custom field values for easy lookup
-    const customerFieldValues = new Map(
-      customer.customFields.map(field => [field.id, field.value])
+    const customerFieldMap = new Map(
+      customer.customFields.map(field => [field.id, field])
     );
     
-    // Add all custom fields from the system, with values if available
-    customFields.forEach(field => {
-      const value = customerFieldValues.get(field.id);
-      
-      if (value !== undefined) {
-        // Format dates if needed
-        if (field.type === 'date' && value instanceof Date) {
-          baseData[field.name] = format(value as Date, 'yyyy-MM-dd');
-        } else {
-          baseData[field.name] = value;
+    if (onlyIncludeAssociatedFields) {
+      // Only include custom fields that are actually associated with this customer
+      customer.customFields.forEach(field => {
+        if (field.name && field.value !== undefined) {
+          // Format dates if needed
+          if (field.type === 'date' && field.value instanceof Date) {
+            baseData[field.name] = format(field.value as Date, 'yyyy-MM-dd');
+          } else {
+            baseData[field.name] = field.value;
+          }
         }
-      } else {
-        baseData[field.name] = '';
-      }
-    });
+      });
+    } else {
+      // Add all custom fields from the system, with values if available
+      customFields.forEach(field => {
+        const customerField = customerFieldMap.get(field.id);
+        
+        if (customerField && customerField.value !== undefined) {
+          // Format dates if needed
+          if (field.type === 'date' && customerField.value instanceof Date) {
+            baseData[field.name] = format(customerField.value as Date, 'yyyy-MM-dd');
+          } else {
+            baseData[field.name] = customerField.value;
+          }
+        } else {
+          baseData[field.name] = '';
+        }
+      });
+    }
     
     return baseData;
   });

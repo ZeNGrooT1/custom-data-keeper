@@ -54,8 +54,8 @@ export function ExcelExport({ isOpen, onClose, customers }: ExcelExportProps) {
     try {
       setLoading(true);
 
-      // Generate Excel data from the customers including custom fields
-      const data = generateExcelData(customers, customFields);
+      // Generate Excel data from the customers, only including custom fields that are explicitly associated
+      const data = generateExcelData(customers, customFields, true);
       
       // Convert to CSV
       const headers = Object.keys(data[0] || {});
