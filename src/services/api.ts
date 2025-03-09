@@ -145,9 +145,15 @@ const parseCustomFieldOptions = (field) => {
   // If options is a string, try to parse it as JSON
   if (options && typeof options === 'string') {
     try {
-      options = JSON.parse(options);
+      // Handle comma-separated string format
+      if (options.includes(',') && !options.startsWith('[')) {
+        options = options.split(',').map(opt => opt.trim());
+      } else {
+        options = JSON.parse(options);
+      }
     } catch (e) {
       console.warn(`Failed to parse options for field ${field.name}:`, e);
+      // Return empty array instead of throwing
       options = [];
     }
   }
@@ -244,8 +250,16 @@ export const customFieldService = {
   },
   create: async (fieldData) => {
     try {
-      const response = await api.post('/custom-fields', fieldData);
-      return response.data;
+      // Ensure options is properly formatted for the server
+      const processedData = { ...fieldData };
+      
+      if (processedData.type === 'select' && Array.isArray(processedData.options)) {
+        // Convert array to JSON string for server
+        processedData.options = JSON.stringify(processedData.options);
+      }
+      
+      const response = await api.post('/custom-fields', processedData);
+      return parseCustomFieldOptions(response.data);
     } catch (error) {
       if (shouldUseMockData()) {
         // Simulate creating a new field with a unique ID
@@ -261,8 +275,16 @@ export const customFieldService = {
   },
   update: async (id, fieldData) => {
     try {
-      const response = await api.put(`/custom-fields/${id}`, fieldData);
-      return response.data;
+      // Ensure options is properly formatted for the server
+      const processedData = { ...fieldData };
+      
+      if (processedData.type === 'select' && Array.isArray(processedData.options)) {
+        // Convert array to JSON string for server
+        processedData.options = JSON.stringify(processedData.options);
+      }
+      
+      const response = await api.put(`/custom-fields/${id}`, processedData);
+      return parseCustomFieldOptions(response.data);
     } catch (error) {
       if (shouldUseMockData()) {
         // Update the mock field
