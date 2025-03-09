@@ -83,7 +83,16 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
   // Load fields on mount
   useEffect(() => {
     if (isOpen) {
-      setFields(getCustomFields());
+      const loadFields = async () => {
+        try {
+          const fields = await customFieldService.getAll();
+          setFields(fields);
+        } catch (error) {
+          console.error('Error loading custom fields:', error);
+        }
+      };
+      
+      loadFields();
     }
   }, [isOpen]);
 
@@ -95,26 +104,34 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
   }, [showAddField, form]);
 
   // Handle form submission
-  const handleFormSubmit = (data: FormValues) => {
-    const options = data.type === 'select' && data.options
-      ? data.options.split(',').map(opt => opt.trim())
-      : undefined;
-    
-    const newField = addCustomField({
-      name: data.name,
-      type: data.type,
-      options,
-    });
-    
-    setFields([...fields, newField]);
-    setShowAddField(false);
-    form.reset();
+  const handleFormSubmit = async (data: FormValues) => {
+    try {
+      const options = data.type === 'select' && data.options
+        ? data.options.split(',').map(opt => opt.trim())
+        : undefined;
+      
+      const newField = await customFieldService.create({
+        name: data.name,
+        type: data.type,
+        options,
+      });
+      
+      setFields([...fields, newField]);
+      setShowAddField(false);
+      form.reset();
+    } catch (error) {
+      console.error('Error adding custom field:', error);
+    }
   };
 
   // Handle field deletion
-  const handleDeleteField = (id: string) => {
-    deleteCustomField(id);
-    setFields(fields.filter(field => field.id !== id));
+  const handleDeleteField = async (id: string) => {
+    try {
+      await customFieldService.delete(id);
+      setFields(fields.filter(field => field.id !== id));
+    } catch (error) {
+      console.error('Error deleting custom field:', error);
+    }
   };
 
   return (

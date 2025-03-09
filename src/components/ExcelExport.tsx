@@ -37,13 +37,18 @@ export function ExcelExport({ isOpen, onClose, customers }: ExcelExportProps) {
         setCustomFields(fields);
       } catch (error) {
         console.error('Error loading custom fields for export:', error);
+        toast({
+          title: 'Warning',
+          description: 'Could not load all custom fields. Export may be incomplete.',
+          variant: 'destructive',
+        });
       }
     };
 
     if (isOpen) {
       fetchCustomFields();
     }
-  }, [isOpen]);
+  }, [isOpen, toast]);
 
   const handleExport = async () => {
     try {

@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -258,9 +257,11 @@ export const customFieldService = {
         processedData.options = JSON.stringify(processedData.options);
       }
       
+      console.log('Sending field data to server:', processedData);
       const response = await api.post('/custom-fields', processedData);
       return parseCustomFieldOptions(response.data);
     } catch (error) {
+      console.error('Error creating custom field:', error);
       if (shouldUseMockData()) {
         // Simulate creating a new field with a unique ID
         const newField = {
@@ -283,9 +284,11 @@ export const customFieldService = {
         processedData.options = JSON.stringify(processedData.options);
       }
       
+      console.log('Updating field data on server:', id, processedData);
       const response = await api.put(`/custom-fields/${id}`, processedData);
       return parseCustomFieldOptions(response.data);
     } catch (error) {
+      console.error('Error updating custom field:', error);
       if (shouldUseMockData()) {
         // Update the mock field
         const index = mockCustomFields.findIndex(f => f.id === id);
@@ -302,6 +305,7 @@ export const customFieldService = {
       await api.delete(`/custom-fields/${id}`);
       return true;
     } catch (error) {
+      console.error('Error deleting custom field:', error);
       if (shouldUseMockData()) {
         // Remove from mock data
         const index = mockCustomFields.findIndex(f => f.id === id);

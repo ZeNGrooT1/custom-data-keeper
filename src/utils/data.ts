@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 
 // Define the customer type
@@ -236,6 +235,11 @@ export const deleteCustomField = (id: string): boolean => {
 
 // Excel export
 export const generateExcelData = (customers: Customer[], customFields: CustomField[] = []): any[] => {
+  // Create a map of field IDs to names for easier lookup
+  const fieldMap = new Map(
+    customFields.map(field => [field.id, field])
+  );
+  
   return customers.map(customer => {
     // Start with the standard fields
     const baseData: Record<string, any> = {
@@ -247,24 +251,23 @@ export const generateExcelData = (customers: Customer[], customFields: CustomFie
       'Location': customer.location,
     };
     
-    // Add custom fields with proper handling
-    customer.customFields.forEach(field => {
-      if (field.value !== undefined && field.value !== null) {
+    // Create a map of the customer's custom field values for easy lookup
+    const customerFieldValues = new Map(
+      customer.customFields.map(field => [field.id, field.value])
+    );
+    
+    // Add all custom fields from the system, with values if available
+    customFields.forEach(field => {
+      const value = customerFieldValues.get(field.id);
+      
+      if (value !== undefined) {
         // Format dates if needed
-        if (field.type === 'date' && field.value instanceof Date) {
-          baseData[field.name] = format(field.value as Date, 'yyyy-MM-dd');
+        if (field.type === 'date' && value instanceof Date) {
+          baseData[field.name] = format(value as Date, 'yyyy-MM-dd');
         } else {
-          baseData[field.name] = field.value;
+          baseData[field.name] = value;
         }
       } else {
-        baseData[field.name] = '';
-      }
-    });
-    
-    // Add any custom fields from the system that the customer doesn't have already
-    customFields.forEach(field => {
-      // Only add if this field doesn't already exist in the customer's custom fields
-      if (!customer.customFields.some(cf => cf.id === field.id)) {
         baseData[field.name] = '';
       }
     });
