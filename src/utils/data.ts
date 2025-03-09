@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 
 // Define the customer type
@@ -238,7 +237,8 @@ export const deleteCustomField = (id: string): boolean => {
 export const generateExcelData = (
   customers: Customer[], 
   customFields: CustomField[] = [], 
-  onlyIncludeAssociatedFields: boolean = false
+  onlyIncludeAssociatedFields: boolean = false,
+  includeBaseFields: boolean = true
 ): any[] => {
   // Create a map of field IDs to names for easier lookup
   const fieldMap = new Map(
@@ -246,15 +246,17 @@ export const generateExcelData = (
   );
   
   return customers.map(customer => {
-    // Start with the standard fields
-    const baseData: Record<string, any> = {
-      'Name': customer.name,
-      'Date of Birth': customer.dob ? format(customer.dob, 'yyyy-MM-dd') : '',
-      'Phone': customer.phone,
-      'Email': customer.email,
-      'Occupation': customer.occupation,
-      'Location': customer.location,
-    };
+    // Start with the standard fields (if includeBaseFields is true)
+    const baseData: Record<string, any> = {};
+    
+    if (includeBaseFields) {
+      baseData['Name'] = customer.name;
+      baseData['Date of Birth'] = customer.dob ? format(customer.dob, 'yyyy-MM-dd') : '';
+      baseData['Phone'] = customer.phone;
+      baseData['Email'] = customer.email;
+      baseData['Occupation'] = customer.occupation;
+      baseData['Location'] = customer.location;
+    }
     
     // Create a map of the customer's custom field values for easy lookup
     const customerFieldMap = new Map(

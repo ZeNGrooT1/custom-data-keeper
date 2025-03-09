@@ -26,6 +26,7 @@ interface ExcelExportProps {
 export function ExcelExport({ isOpen, onClose, customers }: ExcelExportProps) {
   const [fileName, setFileName] = useState('customers_export');
   const [exportAll, setExportAll] = useState(true);
+  const [exportBaseFields, setExportBaseFields] = useState(true);
   const [loading, setLoading] = useState(false);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const { toast } = useToast();
@@ -54,8 +55,19 @@ export function ExcelExport({ isOpen, onClose, customers }: ExcelExportProps) {
     try {
       setLoading(true);
 
-      // Generate Excel data from the customers, only including custom fields that are explicitly associated
-      const data = generateExcelData(customers, customFields, true);
+      // Generate Excel data from customers, only including custom fields
+      // Set exportBaseFields to false to exclude standard fields
+      const data = generateExcelData(customers, customFields, true, exportBaseFields);
+      
+      if (data.length === 0) {
+        toast({
+          title: 'Export Warning',
+          description: 'No data to export. Make sure customers have custom fields assigned.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
       
       // Convert to CSV
       const headers = Object.keys(data[0] || {});
@@ -130,6 +142,15 @@ export function ExcelExport({ isOpen, onClose, customers }: ExcelExportProps) {
               onCheckedChange={(checked) => setExportAll(checked as boolean)}
             />
             <Label htmlFor="export-all">Export all {customers.length} customers</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="export-base-fields"
+              checked={exportBaseFields}
+              onCheckedChange={(checked) => setExportBaseFields(checked as boolean)}
+            />
+            <Label htmlFor="export-base-fields">Include standard fields (name, email, etc.)</Label>
           </div>
         </div>
         
