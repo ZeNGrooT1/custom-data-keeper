@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -23,6 +24,13 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
+// Check if we should use mock data
+const shouldUseMockData = () => {
+  return process.env.NODE_ENV !== 'production' || 
+         localStorage.getItem('use_mock_data') === 'true' ||
+         localStorage.getItem('auth_token') === 'mock-token-for-development';
+};
 
 // Add response interceptor for better error handling
 api.interceptors.response.use(
@@ -226,7 +234,7 @@ export const customFieldService = {
     } catch (error) {
       console.error('Error fetching custom fields, using default fields:', error);
       
-      if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
+      if (shouldUseMockData()) {
         console.log('Using default custom fields');
         return mockCustomFields;
       }
@@ -235,16 +243,53 @@ export const customFieldService = {
     }
   },
   create: async (fieldData) => {
-    const response = await api.post('/custom-fields', fieldData);
-    return response.data;
+    try {
+      const response = await api.post('/custom-fields', fieldData);
+      return response.data;
+    } catch (error) {
+      if (shouldUseMockData()) {
+        // Simulate creating a new field with a unique ID
+        const newField = {
+          ...fieldData,
+          id: Date.now().toString(),
+        };
+        mockCustomFields.push(newField);
+        return newField;
+      }
+      throw error;
+    }
   },
   update: async (id, fieldData) => {
-    const response = await api.put(`/custom-fields/${id}`, fieldData);
-    return response.data;
+    try {
+      const response = await api.put(`/custom-fields/${id}`, fieldData);
+      return response.data;
+    } catch (error) {
+      if (shouldUseMockData()) {
+        // Update the mock field
+        const index = mockCustomFields.findIndex(f => f.id === id);
+        if (index !== -1) {
+          mockCustomFields[index] = { ...mockCustomFields[index], ...fieldData };
+          return mockCustomFields[index];
+        }
+      }
+      throw error;
+    }
   },
   delete: async (id) => {
-    await api.delete(`/custom-fields/${id}`);
-    return true;
+    try {
+      await api.delete(`/custom-fields/${id}`);
+      return true;
+    } catch (error) {
+      if (shouldUseMockData()) {
+        // Remove from mock data
+        const index = mockCustomFields.findIndex(f => f.id === id);
+        if (index !== -1) {
+          mockCustomFields.splice(index, 1);
+        }
+        return true;
+      }
+      throw error;
+    }
   }
 };
 
