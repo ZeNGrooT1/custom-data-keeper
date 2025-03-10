@@ -269,7 +269,7 @@ export const generateExcelData = (
     
     // Create a map of the customer's custom field values for easy lookup
     const customerFieldMap = new Map(
-      (customer.customFields || []).map(cf => [cf.fieldId, cf.value])
+      (customer.customFields || []).map(cf => [cf.id, cf.value])
     );
     
     // Add only the custom fields that are associated with this customer

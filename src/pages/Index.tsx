@@ -16,6 +16,7 @@ import { Navbar } from '@/components/Navbar';
 import { Customer } from '@/utils/data';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerService } from '@/services/api';
+import { motion } from 'framer-motion';
 
 const Index = () => {
   const queryClient = useQueryClient();
@@ -120,10 +121,10 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-muted-foreground">Loading customers...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+        <div className="flex flex-col items-center glass p-8 rounded-xl shadow-lg">
+          <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-6 text-muted-foreground font-medium">Loading customers...</p>
         </div>
       </div>
     );
@@ -131,17 +132,45 @@ const Index = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-red-600 mb-2">Error loading customers</h2>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center glass p-8 rounded-xl shadow-lg">
+          <h2 className="text-2xl font-semibold text-red-600 mb-3">Error loading customers</h2>
           <p className="text-muted-foreground">Please try again later or contact support.</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-primary/90 text-white rounded-md hover:bg-primary transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
       <Navbar 
         onSearch={handleSearch}
         onAddCustomer={() => {
@@ -154,40 +183,58 @@ const Index = () => {
         onTabChange={handleViewModeChange}
       />
       
-      <main className="flex-1 container py-6 px-4 lg:px-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-semibold mb-2">Customer Management</h1>
-          <p className="text-muted-foreground">
+      <main className="flex-1 container py-8 px-4 lg:px-8">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
+          <h1 className="text-4xl font-bold mb-2 text-gray-800 dark:text-white">
+            Customer Management
+          </h1>
+          <p className="text-muted-foreground text-lg">
             {displayedCustomers.length === customers.length 
               ? `Manage all your ${customers.length} customers`
               : `Showing ${displayedCustomers.length} of ${customers.length} customers`
             }
           </p>
-        </div>
+        </motion.div>
         
         {viewMode === 'list' ? (
-          <CustomerList 
-            customers={displayedCustomers} 
-            onEdit={handleEditCustomer} 
-            onDelete={handleDeleteCustomer} 
-          />
+          <div className="bg-white/70 dark:bg-gray-800/50 rounded-xl backdrop-blur-sm shadow-lg p-6 animate-fade-in">
+            <CustomerList 
+              customers={displayedCustomers} 
+              onEdit={handleEditCustomer} 
+              onDelete={handleDeleteCustomer} 
+            />
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
             {displayedCustomers.length === 0 ? (
-              <div className="col-span-full text-center py-12">
+              <motion.div 
+                variants={itemVariants}
+                className="col-span-full glass text-center py-12 rounded-xl shadow-md"
+              >
                 <p className="text-muted-foreground">No customers found.</p>
-              </div>
+              </motion.div>
             ) : (
               displayedCustomers.map(customer => (
-                <CustomerCard 
-                  key={customer.id} 
-                  customer={customer} 
-                  onEdit={handleEditCustomer} 
-                  onDelete={handleDeleteCustomer} 
-                />
+                <motion.div key={customer.id} variants={itemVariants}>
+                  <CustomerCard 
+                    customer={customer} 
+                    onEdit={handleEditCustomer} 
+                    onDelete={handleDeleteCustomer} 
+                  />
+                </motion.div>
               ))
             )}
-          </div>
+          </motion.div>
         )}
       </main>
       
@@ -195,7 +242,7 @@ const Index = () => {
       <Dialog open={showCustomerForm} onOpenChange={setShowCustomerForm}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{selectedCustomer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
+            <DialogTitle className="text-2xl">{selectedCustomer ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
           </DialogHeader>
           <CustomerForm 
             customer={selectedCustomer} 
