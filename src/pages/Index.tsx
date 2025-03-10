@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { 
   Dialog, 
@@ -26,7 +27,7 @@ const Index = () => {
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showFieldsManager, setShowFieldsManager] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
 
   // Fetch customers with React Query
   const { data: customers = [], isLoading, isError } = useQuery({
@@ -171,7 +172,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-950">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-indigo-950 dark:to-purple-950">
       <Navbar 
         onSearch={handleSearch}
         onAddCustomer={() => {
@@ -208,7 +209,7 @@ const Index = () => {
             </div>
           </div>
           
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm p-1.5 rounded-lg shadow-sm">
             <Button 
               variant={viewMode === 'list' ? 'default' : 'outline'} 
               size="sm" 

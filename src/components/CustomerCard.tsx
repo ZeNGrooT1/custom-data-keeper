@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { format } from 'date-fns';
-import { MoreHorizontal, User, Calendar, Phone, Mail, Briefcase, MapPin } from 'lucide-react';
+import { MoreHorizontal, Calendar, Phone, Mail, Briefcase, MapPin } from 'lucide-react';
 import { 
   Card, 
   CardContent, 
@@ -37,7 +37,7 @@ export function CustomerCard({ customer, onEdit, onDelete }: CustomerCardProps) 
   };
 
   return (
-    <Card className="animate-fadeIn transition-all hover:shadow-md">
+    <Card className="animate-fadeIn transition-all hover:shadow-md hover:bg-white/90 dark:hover:bg-gray-800/70">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-xl font-medium">{customer.name}</CardTitle>
@@ -97,9 +97,9 @@ export function CustomerCard({ customer, onEdit, onDelete }: CustomerCardProps) 
           <div className="w-full">
             <h4 className="text-xs font-semibold text-muted-foreground mb-2">Additional Information</h4>
             <div className="grid gap-2 text-sm">
-              {customer.customFields.map((field) => (
+              {customer.customFields.map((field, index) => (
                 field.value && (
-                  <div key={`${customer.id}-${field.id}`} className="flex items-start">
+                  <div key={`${customer.id}-${field.id || index}`} className="flex items-start">
                     <Badge variant="outline" className="mr-2 mt-0.5">
                       {field.name}
                     </Badge>
