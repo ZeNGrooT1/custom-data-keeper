@@ -242,11 +242,20 @@ export const generateExcelData = (
 ): any[] => {
   // Create a map of field IDs to names for easier lookup
   const fieldMap = new Map(
-    customFields.map(field => [field.id, field])
+    customFields.map(field => [field.id, field.name])
   );
   
-  return customers.map(customer => {
-    // Start with the standard fields (if includeBaseFields is true)
+  // Filter out customers with no custom fields if onlyIncludeAssociatedFields is true
+  const filteredCustomers = onlyIncludeAssociatedFields 
+    ? customers.filter(customer => customer.customFields && customer.customFields.length > 0)
+    : customers;
+
+  // If no customers have custom fields and we're only including associated fields, return empty array
+  if (onlyIncludeAssociatedFields && filteredCustomers.length === 0) {
+    return [];
+  }
+
+  return filteredCustomers.map(customer => {
     const baseData: Record<string, any> = {};
     
     if (includeBaseFields) {
@@ -260,39 +269,20 @@ export const generateExcelData = (
     
     // Create a map of the customer's custom field values for easy lookup
     const customerFieldMap = new Map(
-      customer.customFields.map(field => [field.id, field])
+      (customer.customFields || []).map(cf => [cf.fieldId, cf.value])
     );
     
-    if (onlyIncludeAssociatedFields) {
-      // Only include custom fields that are actually associated with this customer
-      customer.customFields.forEach(field => {
-        if (field.name && field.value !== undefined) {
-          // Format dates if needed
-          if (field.type === 'date' && field.value instanceof Date) {
-            baseData[field.name] = format(field.value as Date, 'yyyy-MM-dd');
-          } else {
-            baseData[field.name] = field.value;
-          }
-        }
-      });
-    } else {
-      // Add all custom fields from the system, with values if available
-      customFields.forEach(field => {
-        const customerField = customerFieldMap.get(field.id);
-        
-        if (customerField && customerField.value !== undefined) {
-          // Format dates if needed
-          if (field.type === 'date' && customerField.value instanceof Date) {
-            baseData[field.name] = format(customerField.value as Date, 'yyyy-MM-dd');
-          } else {
-            baseData[field.name] = customerField.value;
-          }
-        } else {
-          baseData[field.name] = '';
-        }
-      });
-    }
-    
-    return baseData;
+    // Add only the custom fields that are associated with this customer
+    const customFieldData = {};
+    customFields.forEach(field => {
+      if (!onlyIncludeAssociatedFields || customerFieldMap.has(field.id)) {
+        customFieldData[field.name] = customerFieldMap.get(field.id) || '';
+      }
+    });
+
+    return {
+      ...baseData,
+      ...customFieldData
+    };
   });
 };

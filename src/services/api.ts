@@ -76,7 +76,10 @@ const mockCustomers = [
     email: 'john.doe@example.com',
     occupation: 'Software Engineer',
     location: 'New York, NY',
-    customFields: []
+    customFields: [
+      { fieldId: '1', value: 'Some notes here' },
+      { fieldId: '2', value: 'VIP' }
+    ]
   },
   {
     id: '2',
@@ -103,12 +106,6 @@ const mockCustomFields = [
     name: 'Customer Type',
     type: 'select',
     options: ['Regular', 'VIP', 'Corporate']
-  },
-  {
-    id: '3',
-    name: 'Annual Revenue',
-    type: 'number',
-    options: null
   }
 ];
 
@@ -235,7 +232,7 @@ export const customFieldService = {
   getAll: async () => {
     try {
       const response = await api.get('/custom-fields');
-      return response.data.map(field => parseCustomFieldOptions(field));
+      return response.data.map((field: any) => parseCustomFieldOptions(field));
     } catch (error) {
       console.error('Error fetching custom fields, using default fields:', error);
       
