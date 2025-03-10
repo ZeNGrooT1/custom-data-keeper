@@ -17,6 +17,7 @@ import { Customer } from '@/utils/data';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerService } from '@/services/api';
 import { motion } from 'framer-motion';
+import { Briefcase, Users } from 'lucide-react';
 
 const Index = () => {
   const queryClient = useQueryClient();
@@ -121,7 +122,7 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
         <div className="flex flex-col items-center glass p-8 rounded-xl shadow-lg">
           <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           <p className="mt-6 text-muted-foreground font-medium">Loading customers...</p>
@@ -170,7 +171,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-950">
       <Navbar 
         onSearch={handleSearch}
         onAddCustomer={() => {
@@ -188,27 +189,37 @@ const Index = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-8"
+          className="mb-8 flex items-center"
         >
-          <h1 className="text-4xl font-bold mb-2 text-gray-800 dark:text-white">
-            Customer Management
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            {displayedCustomers.length === customers.length 
-              ? `Manage all your ${customers.length} customers`
-              : `Showing ${displayedCustomers.length} of ${customers.length} customers`
-            }
-          </p>
+          <div className="mr-4 bg-primary/10 p-3 rounded-full">
+            <Users className="h-8 w-8 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+              Customer Directory
+            </h1>
+            <p className="text-muted-foreground">
+              {displayedCustomers.length === customers.length 
+                ? `${customers.length} total customers`
+                : `Showing ${displayedCustomers.length} of ${customers.length} customers`
+              }
+            </p>
+          </div>
         </motion.div>
         
         {viewMode === 'list' ? (
-          <div className="bg-white/70 dark:bg-gray-800/50 rounded-xl backdrop-blur-sm shadow-lg p-6 animate-fade-in">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="bg-white/80 dark:bg-gray-800/50 rounded-xl backdrop-blur-sm shadow-lg p-6 border border-gray-100 dark:border-gray-700"
+          >
             <CustomerList 
               customers={displayedCustomers} 
               onEdit={handleEditCustomer} 
               onDelete={handleDeleteCustomer} 
             />
-          </div>
+          </motion.div>
         ) : (
           <motion.div 
             variants={containerVariants}
@@ -219,8 +230,9 @@ const Index = () => {
             {displayedCustomers.length === 0 ? (
               <motion.div 
                 variants={itemVariants}
-                className="col-span-full glass text-center py-12 rounded-xl shadow-md"
+                className="col-span-full bg-white/80 dark:bg-gray-800/50 text-center py-12 rounded-xl shadow-md border border-gray-100 dark:border-gray-700"
               >
+                <Briefcase className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
                 <p className="text-muted-foreground">No customers found.</p>
               </motion.div>
             ) : (
