@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Dialog, 
@@ -17,7 +16,8 @@ import { Customer } from '@/utils/data';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerService } from '@/services/api';
 import { motion } from 'framer-motion';
-import { Briefcase, Users } from 'lucide-react';
+import { Briefcase, Users, LayoutGrid, List } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const queryClient = useQueryClient();
@@ -116,8 +116,8 @@ const Index = () => {
   };
 
   // Handle view mode change
-  const handleViewModeChange = (mode: string) => {
-    setViewMode(mode as 'list' | 'grid');
+  const handleViewModeChange = (mode: 'list' | 'grid') => {
+    setViewMode(mode);
   };
 
   if (isLoading) {
@@ -189,21 +189,44 @@ const Index = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-8 flex items-center"
+          className="mb-8 flex items-center justify-between"
         >
-          <div className="mr-4 bg-primary/10 p-3 rounded-full">
-            <Users className="h-8 w-8 text-primary" />
+          <div className="flex items-center">
+            <div className="mr-4 bg-primary/10 p-3 rounded-full">
+              <Users className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+                Customer Directory
+              </h1>
+              <p className="text-muted-foreground">
+                {displayedCustomers.length === customers.length 
+                  ? `${customers.length} total customers`
+                  : `Showing ${displayedCustomers.length} of ${customers.length} customers`
+                }
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-              Customer Directory
-            </h1>
-            <p className="text-muted-foreground">
-              {displayedCustomers.length === customers.length 
-                ? `${customers.length} total customers`
-                : `Showing ${displayedCustomers.length} of ${customers.length} customers`
-              }
-            </p>
+          
+          <div className="hidden sm:flex items-center gap-2">
+            <Button 
+              variant={viewMode === 'list' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => handleViewModeChange('list')}
+              className="flex items-center gap-1"
+            >
+              <List className="h-4 w-4" />
+              <span>List</span>
+            </Button>
+            <Button 
+              variant={viewMode === 'grid' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => handleViewModeChange('grid')}
+              className="flex items-center gap-1"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span>Grid</span>
+            </Button>
           </div>
         </motion.div>
         

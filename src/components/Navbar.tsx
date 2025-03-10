@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Search, UserPlus, FilePlus, Download, Menu, LogOut, User } from 'lucide-react';
+import { Search, UserPlus, FilePlus, Download, Menu, LogOut, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -107,12 +107,29 @@ export function Navbar({
             Export Data
           </Button>
           <div className="mt-4">
-            <Tabs defaultValue={activeTab} onValueChange={onTabChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="list">List View</TabsTrigger>
-                <TabsTrigger value="grid">Grid View</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex flex-col space-y-2">
+              <h3 className="text-sm font-medium">View Mode</h3>
+              <div className="flex space-x-2">
+                <Button 
+                  variant={activeTab === 'list' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => onTabChange('list')}
+                  className="flex items-center"
+                >
+                  <List className="mr-2 h-4 w-4" />
+                  List
+                </Button>
+                <Button 
+                  variant={activeTab === 'grid' ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => onTabChange('grid')}
+                  className="flex items-center"
+                >
+                  <LayoutGrid className="mr-2 h-4 w-4" />
+                  Grid
+                </Button>
+              </div>
+            </div>
           </div>
           <DropdownMenuSeparator />
           <Button className="justify-start" variant="ghost" onClick={handleLogout}>
@@ -128,7 +145,7 @@ export function Navbar({
     <div className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center px-4">
         <div className="mr-4 hidden md:flex">
-          <h2 className="text-xl font-semibold">Customer Manager</h2>
+          <h2 className="text-xl font-semibold">Customer Directory</h2>
         </div>
         <div className="mr-4 md:hidden">
           <MobileMenu />
@@ -150,12 +167,26 @@ export function Navbar({
           
           {!isMobile && (
             <div className="flex items-center gap-2">
-              <Tabs defaultValue={activeTab} onValueChange={onTabChange}>
-                <TabsList>
-                  <TabsTrigger value="list">List View</TabsTrigger>
-                  <TabsTrigger value="grid">Grid View</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="flex items-center space-x-1 bg-muted/40 p-1 rounded-md">
+                <Button 
+                  variant={activeTab === 'list' ? 'default' : 'ghost'} 
+                  size="sm"
+                  onClick={() => onTabChange('list')}
+                  className="flex items-center"
+                >
+                  <List className="mr-1 h-4 w-4" />
+                  List
+                </Button>
+                <Button 
+                  variant={activeTab === 'grid' ? 'default' : 'ghost'} 
+                  size="sm"
+                  onClick={() => onTabChange('grid')}
+                  className="flex items-center"
+                >
+                  <LayoutGrid className="mr-1 h-4 w-4" />
+                  Grid
+                </Button>
+              </div>
               <Button variant="ghost" size="sm" onClick={onAddCustomer}>
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add

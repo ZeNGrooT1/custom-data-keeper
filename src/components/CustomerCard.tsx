@@ -99,7 +99,7 @@ export function CustomerCard({ customer, onEdit, onDelete }: CustomerCardProps) 
             <div className="grid gap-2 text-sm">
               {customer.customFields.map((field) => (
                 field.value && (
-                  <div key={field.id} className="flex items-start">
+                  <div key={`${customer.id}-${field.id}`} className="flex items-start">
                     <Badge variant="outline" className="mr-2 mt-0.5">
                       {field.name}
                     </Badge>
