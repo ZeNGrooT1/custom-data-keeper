@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -43,6 +44,11 @@ api.interceptors.response.use(
       errorMessage = 'Request timed out. Please check your connection';
     } else if (error.code === 'ERR_NETWORK') {
       errorMessage = 'Network error. Make sure your backend server is running';
+      // If network error, immediately use mock data
+      if (shouldUseMockData()) {
+        console.log('Network error detected, using mock data');
+        return Promise.resolve({ data: [], isMock: true });
+      }
     } else if (error.response) {
       const status = error.response.status;
       const serverMessage = error.response.data?.error || error.response.data?.message;
@@ -77,8 +83,8 @@ const mockCustomers = [
     occupation: 'Software Engineer',
     location: 'New York, NY',
     customFields: [
-      { fieldId: '1', value: 'Some notes here' },
-      { fieldId: '2', value: 'VIP' }
+      { id: '1', name: 'Notes', type: 'text', value: 'Some notes here' },
+      { id: '2', name: 'Customer Type', type: 'select', value: 'VIP' }
     ]
   },
   {
@@ -106,6 +112,12 @@ const mockCustomFields = [
     name: 'Customer Type',
     type: 'select',
     options: ['Regular', 'VIP', 'Corporate']
+  },
+  {
+    id: '3',
+    name: 'Annual Revenue',
+    type: 'number',
+    options: null
   }
 ];
 
@@ -168,7 +180,7 @@ export const customerService = {
       return response.data.map(customer => parseCustomFields(customer));
     } catch (error) {
       console.error('Error fetching customers, using mock data:', error);
-      if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
+      if (shouldUseMockData()) {
         console.log('Using mock customer data');
         return mockCustomers;
       }
@@ -180,7 +192,7 @@ export const customerService = {
       const response = await api.get(`/customers/${id}`);
       return parseCustomFields(response.data);
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
+      if (shouldUseMockData()) {
         const mockCustomer = mockCustomers.find(c => c.id === id);
         if (mockCustomer) return mockCustomer;
       }
@@ -193,8 +205,24 @@ export const customerService = {
       customFields: Array.isArray(customerData.customFields) ? customerData.customFields : []
     };
     
-    const response = await api.post('/customers', processedData);
-    return parseCustomFields(response.data);
+    try {
+      const response = await api.post('/customers', processedData);
+      return parseCustomFields(response.data);
+    } catch (error) {
+      if (shouldUseMockData()) {
+        // Create a mock customer with an ID
+        const newCustomer = {
+          id: Date.now().toString(),
+          ...customerData,
+          customFields: processedData.customFields,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        mockCustomers.push(newCustomer);
+        return newCustomer;
+      }
+      throw error;
+    }
   },
   update: async (id, customerData) => {
     const processedData = {
@@ -202,19 +230,47 @@ export const customerService = {
       customFields: Array.isArray(customerData.customFields) ? customerData.customFields : []
     };
     
-    const response = await api.put(`/customers/${id}`, processedData);
-    return parseCustomFields(response.data);
+    try {
+      const response = await api.put(`/customers/${id}`, processedData);
+      return parseCustomFields(response.data);
+    } catch (error) {
+      if (shouldUseMockData()) {
+        // Update mock customer
+        const index = mockCustomers.findIndex(c => c.id === id);
+        if (index !== -1) {
+          mockCustomers[index] = {
+            ...mockCustomers[index],
+            ...customerData,
+            customFields: processedData.customFields,
+            updatedAt: new Date()
+          };
+          return mockCustomers[index];
+        }
+      }
+      throw error;
+    }
   },
   delete: async (id) => {
-    await api.delete(`/customers/${id}`);
-    return true;
+    try {
+      await api.delete(`/customers/${id}`);
+      return true;
+    } catch (error) {
+      if (shouldUseMockData()) {
+        const index = mockCustomers.findIndex(c => c.id === id);
+        if (index !== -1) {
+          mockCustomers.splice(index, 1);
+        }
+        return true;
+      }
+      throw error;
+    }
   },
   search: async (query) => {
     try {
       const response = await api.get(`/customers/search/${query}`);
       return response.data.map(customer => parseCustomFields(customer));
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production' || localStorage.getItem('use_mock_data') === 'true') {
+      if (shouldUseMockData()) {
         const filtered = mockCustomers.filter(c => 
           c.name.toLowerCase().includes(query.toLowerCase()) ||
           c.email.toLowerCase().includes(query.toLowerCase()) ||
@@ -238,7 +294,18 @@ export const customFieldService = {
       }
       
       const response = await api.get('/custom-fields');
-      return response.data.map((field: any) => parseCustomFieldOptions(field));
+      
+      // Map and validate each field
+      const parsedFields = response.data.map((field) => {
+        try {
+          return parseCustomFieldOptions(field);
+        } catch (error) {
+          console.error(`Error parsing field ${field.id}:`, error);
+          return null;
+        }
+      }).filter(field => field !== null); // Remove any fields that failed to parse
+      
+      return parsedFields;
     } catch (error) {
       console.error('Error fetching custom fields, using default fields:', error);
       

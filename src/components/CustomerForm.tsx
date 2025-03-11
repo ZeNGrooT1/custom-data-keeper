@@ -18,8 +18,10 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { Customer, CustomField, getCustomFields } from '@/utils/data';
+import { Customer, CustomField } from '@/utils/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { customFieldService } from '@/services/api';
+import { toast } from 'sonner';
 
 // Define the form schema with zod
 const formSchema = z.object({
@@ -45,6 +47,7 @@ interface CustomerFormProps {
 
 export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps) {
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Initialize the form
   const form = useForm<FormValues>({
@@ -62,21 +65,45 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
 
   // Load custom fields on mount
   useEffect(() => {
-    const fields = getCustomFields();
-    setCustomFields(fields);
-    
-    // If editing an existing customer, set custom field values
-    if (customer?.customFields?.length) {
-      const customFieldValues: Record<string, string | number | null> = {};
-      
-      customer.customFields.forEach(field => {
-        if (field && field.id) {
-          customFieldValues[field.id] = field.value as string | number | null;
+    const loadCustomFields = async () => {
+      try {
+        setIsLoading(true);
+        const fields = await customFieldService.getAll();
+        console.log('Loaded custom fields for form:', fields);
+        
+        // Filter out invalid fields
+        const validFields = fields.filter(field => 
+          field && 
+          typeof field === 'object' && 
+          field.id && 
+          field.name && 
+          field.type
+        );
+        
+        setCustomFields(validFields);
+        
+        // If editing an existing customer, set custom field values
+        if (customer?.customFields?.length) {
+          const customFieldValues: Record<string, string | number | null> = {};
+          
+          customer.customFields.forEach(field => {
+            if (field && field.id) {
+              customFieldValues[field.id] = field.value as string | number | null;
+            }
+          });
+          
+          form.setValue('customFields', customFieldValues);
         }
-      });
-      
-      form.setValue('customFields', customFieldValues);
-    }
+      } catch (error) {
+        console.error('Error loading custom fields for form:', error);
+        toast.error('Failed to load custom fields');
+        setCustomFields([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadCustomFields();
   }, [customer, form]);
 
   // Handle form submission
@@ -221,7 +248,11 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
         </div>
 
         {/* Custom Fields */}
-        {customFields.length > 0 && (
+        {isLoading ? (
+          <div className="flex justify-center py-4">
+            <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : customFields.length > 0 ? (
           <div className="mt-6">
             <h3 className="mb-4 text-lg font-medium">Additional Information</h3>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -260,6 +291,33 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
                           ))}
                         </SelectContent>
                       </Select>
+                    ) : field.type === 'date' ? (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !form.watch(`customFields.${field.id}`) && "text-muted-foreground"
+                            )}
+                          >
+                            {form.watch(`customFields.${field.id}`) ? (
+                              format(new Date(form.watch(`customFields.${field.id}`) as string), "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={form.watch(`customFields.${field.id}`) ? new Date(form.watch(`customFields.${field.id}`) as string) : undefined}
+                            onSelect={(date) => form.setValue(`customFields.${field.id}`, date ? date.toISOString() : null)}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                     ) : (
                       <Input
                         placeholder={field.name}
@@ -274,7 +332,7 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
               ))}
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className="flex justify-end space-x-2">
           <Button type="button" variant="outline" onClick={onCancel}>
