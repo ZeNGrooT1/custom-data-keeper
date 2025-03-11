@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -379,16 +378,42 @@ export const customFieldService = {
     }
   },
   delete: async (id) => {
+    if (!id) {
+      throw new Error('Field ID is required');
+    }
+
     try {
+      // Attempt to delete from the server
       await api.delete(`/custom-fields/${id}`);
+      
+      // If successful, also update local mock data to stay in sync
+      if (shouldUseMockData()) {
+        const index = mockCustomFields.findIndex(f => f.id === id);
+        if (index !== -1) {
+          mockCustomFields.splice(index, 1);
+        }
+      }
+      
+      // Also remove this field from all mock customers to maintain consistency
+      mockCustomers.forEach(customer => {
+        customer.customFields = customer.customFields.filter(field => field.id !== id);
+      });
+
       return true;
     } catch (error) {
       console.error('Error deleting custom field:', error);
+      
+      // Only use mock data if we're supposed to
       if (shouldUseMockData()) {
         // Remove from mock data
         const index = mockCustomFields.findIndex(f => f.id === id);
         if (index !== -1) {
           mockCustomFields.splice(index, 1);
+          
+          // Also remove this field from all mock customers
+          mockCustomers.forEach(customer => {
+            customer.customFields = customer.customFields.filter(field => field.id !== id);
+          });
         }
         return true;
       }
