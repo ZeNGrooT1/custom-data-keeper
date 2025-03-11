@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -47,7 +48,6 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { CustomField, getCustomFields, addCustomField, deleteCustomField } from '@/utils/data';
 import { customFieldService } from '@/services/api';
 
 const formSchema = z.object({
@@ -59,6 +59,13 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+interface CustomField {
+  id: string;
+  name: string;
+  type: string;
+  options: string[] | null;
+}
 
 interface CustomFieldsManagerProps {
   isOpen: boolean;
@@ -83,9 +90,18 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
       const loadFields = async () => {
         try {
           const fields = await customFieldService.getAll();
-          setFields(fields);
+          // Filter out any fields that don't have the required properties
+          const validFields = fields.filter(field => 
+            field && 
+            typeof field === 'object' && 
+            field.id && 
+            field.name && 
+            field.type
+          );
+          setFields(validFields);
         } catch (error) {
           console.error('Error loading custom fields:', error);
+          setFields([]);
         }
       };
       
@@ -103,7 +119,7 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
     try {
       const options = data.type === 'select' && data.options
         ? data.options.split(',').map(opt => opt.trim())
-        : undefined;
+        : null;
       
       const newField = await customFieldService.create({
         name: data.name,
@@ -174,8 +190,8 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
                       <TableCell>
                         {field.type === 'select' && field.options ? (
                           <div className="flex flex-wrap gap-1">
-                            {field.options.map(option => (
-                              <Badge key={option} variant="secondary" className="text-xs">
+                            {field.options.map((option, index) => (
+                              <Badge key={`${option}-${index}`} variant="secondary" className="text-xs">
                                 {option}
                               </Badge>
                             ))}

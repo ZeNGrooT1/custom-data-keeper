@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { 
   Dialog, 
@@ -216,7 +217,7 @@ const Index = () => {
                 <p className="text-muted-foreground">No customers found.</p>
               </div>
             ) : (
-              displayedCustomers.map(customer => (
+              displayedCustomers.map((customer) => (
                 <div key={customer.id}>
                   <CustomerCard 
                     customer={customer} 

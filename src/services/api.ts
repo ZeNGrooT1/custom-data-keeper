@@ -231,21 +231,35 @@ export const customerService = {
 export const customFieldService = {
   getAll: async () => {
     try {
-      const response = await api.get('/custom-fields');
-      return response.data.map((field: any) => parseCustomFieldOptions(field));
-    } catch (error) {
-      console.error('Error fetching custom fields, using default fields:', error);
-      
+      // Always check if we should use mock data first to avoid unnecessary API calls
       if (shouldUseMockData()) {
         console.log('Using default custom fields');
         return mockCustomFields;
       }
       
-      throw error;
+      const response = await api.get('/custom-fields');
+      return response.data.map((field: any) => parseCustomFieldOptions(field));
+    } catch (error) {
+      console.error('Error fetching custom fields, using default fields:', error);
+      
+      // Fallback to mock data if there's an error
+      console.log('Using default custom fields');
+      return mockCustomFields;
     }
   },
   create: async (fieldData) => {
     try {
+      // Always check if we should use mock data first
+      if (shouldUseMockData()) {
+        // Simulate creating a new field with a unique ID
+        const newField = {
+          ...fieldData,
+          id: Date.now().toString(),
+        };
+        mockCustomFields.push(newField);
+        return newField;
+      }
+      
       // Ensure options is properly formatted for the server
       const processedData = { ...fieldData };
       
