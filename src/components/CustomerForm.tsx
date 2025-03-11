@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -88,7 +87,7 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
           
           customer.customFields.forEach(field => {
             if (field && field.id) {
-              customFieldValues[field.id] = field.value as string | number | null;
+              customFieldValues[field.id.toString()] = field.value as string | number | null;
             }
           });
           
@@ -112,11 +111,12 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
     const processedCustomFields = customFields
       .filter(field => field && field.id)
       .map(field => {
+        const fieldId = field.id.toString(); // Ensure id is a string for consistency
         return {
-          id: field.id.toString(), // Ensure id is a string for consistency
+          id: fieldId,
           name: field.name,
           type: field.type,
-          value: data.customFields?.[field.id] || null,
+          value: data.customFields?.[fieldId] || null,
         };
       });
     
@@ -256,31 +256,33 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
           <div className="mt-6">
             <h3 className="mb-4 text-lg font-medium">Additional Information</h3>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {customFields.map((field) => (
-                <FormItem key={field.id}>
+              {customFields.map((field) => {
+                const fieldId = field.id.toString(); // Ensure consistent string ID
+                return (
+                <FormItem key={fieldId}>
                   <FormLabel>{field.name}</FormLabel>
                   <FormControl>
                     {field.type === 'text' ? (
                       <Input
                         placeholder={field.name}
-                        value={form.watch(`customFields.${field.id}`) as string || ''}
+                        value={form.watch(`customFields.${fieldId}`) as string || ''}
                         onChange={(e) => {
-                          form.setValue(`customFields.${field.id}`, e.target.value);
+                          form.setValue(`customFields.${fieldId}`, e.target.value);
                         }}
                       />
                     ) : field.type === 'number' ? (
                       <Input
                         type="number"
                         placeholder={field.name}
-                        value={form.watch(`customFields.${field.id}`) as string || ''}
+                        value={form.watch(`customFields.${fieldId}`) as string || ''}
                         onChange={(e) => {
-                          form.setValue(`customFields.${field.id}`, e.target.valueAsNumber || null);
+                          form.setValue(`customFields.${fieldId}`, e.target.valueAsNumber || null);
                         }}
                       />
                     ) : field.type === 'select' && field.options ? (
                       <Select
-                        onValueChange={(value) => form.setValue(`customFields.${field.id}`, value)}
-                        defaultValue={form.watch(`customFields.${field.id}`) as string || ''}
+                        onValueChange={(value) => form.setValue(`customFields.${fieldId}`, value)}
+                        defaultValue={form.watch(`customFields.${fieldId}`) as string || ''}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder={`Select ${field.name}`} />
@@ -298,11 +300,11 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
                             variant="outline"
                             className={cn(
                               "w-full justify-start text-left font-normal",
-                              !form.watch(`customFields.${field.id}`) && "text-muted-foreground"
+                              !form.watch(`customFields.${fieldId}`) && "text-muted-foreground"
                             )}
                           >
-                            {form.watch(`customFields.${field.id}`) ? (
-                              format(new Date(form.watch(`customFields.${field.id}`) as string), "PPP")
+                            {form.watch(`customFields.${fieldId}`) ? (
+                              format(new Date(form.watch(`customFields.${fieldId}`) as string), "PPP")
                             ) : (
                               <span>Pick a date</span>
                             )}
@@ -312,8 +314,8 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={form.watch(`customFields.${field.id}`) ? new Date(form.watch(`customFields.${field.id}`) as string) : undefined}
-                            onSelect={(date) => form.setValue(`customFields.${field.id}`, date ? date.toISOString() : null)}
+                            selected={form.watch(`customFields.${fieldId}`) ? new Date(form.watch(`customFields.${fieldId}`) as string) : undefined}
+                            onSelect={(date) => form.setValue(`customFields.${fieldId}`, date ? date.toISOString() : null)}
                             initialFocus
                           />
                         </PopoverContent>
@@ -321,15 +323,15 @@ export function CustomerForm({ customer, onSubmit, onCancel }: CustomerFormProps
                     ) : (
                       <Input
                         placeholder={field.name}
-                        value={form.watch(`customFields.${field.id}`) as string || ''}
+                        value={form.watch(`customFields.${fieldId}`) as string || ''}
                         onChange={(e) => {
-                          form.setValue(`customFields.${field.id}`, e.target.value);
+                          form.setValue(`customFields.${fieldId}`, e.target.value);
                         }}
                       />
                     )}
                   </FormControl>
                 </FormItem>
-              ))}
+              )})}
             </div>
           </div>
         ) : null}
