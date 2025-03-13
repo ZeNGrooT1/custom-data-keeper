@@ -19,7 +19,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Customer, CustomField } from '@/utils/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { customFieldService } from '@/services/api';
+import customFieldService from '@/services/customFieldService';
 import { toast } from 'sonner';
 
 // Define the form schema with zod
