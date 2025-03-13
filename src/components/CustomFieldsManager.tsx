@@ -41,6 +41,49 @@ import {
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
 import { 
+
+  const handleDeleteField = async (fieldId: string) => {
+    try {
+      setIsLoading(true);
+      await customFieldService.deleteField(fieldId);
+      toast.success('Custom field deleted successfully');
+      loadFields(); // Reload the fields after deletion
+    } catch (error) {
+      console.error('Error deleting custom field:', error);
+      toast.error('Failed to delete custom field');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onSubmit = async (data: FormValues) => {
+    try {
+      setIsLoading(true);
+      
+      // Parse options for select type fields
+      let parsedOptions = null;
+      if (data.type === 'select' && data.options) {
+        parsedOptions = data.options.split(',').map(opt => opt.trim()).filter(opt => opt);
+      }
+
+      const newField = await customFieldService.createField({
+        name: data.name,
+        type: data.type,
+        options: parsedOptions
+      });
+
+      toast.success('Custom field created successfully');
+      setFields([...fields, newField]);
+      setShowAddField(false);
+      form.reset();
+    } catch (error) {
+      console.error('Error creating custom field:', error);
+      toast.error('Failed to create custom field');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   Dialog,
   DialogContent,
   DialogHeader,

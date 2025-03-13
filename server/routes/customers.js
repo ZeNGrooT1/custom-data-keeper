@@ -4,23 +4,86 @@ const mysql = require('mysql2/promise');
 const pool = require('../db');
 
 // Format custom fields from JSON object to array
-const formatCustomFields = (customFieldsData) => {
-  if (!customFieldsData) return [];
+// Update customer with custom fields
+router.post('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, email, phone, dob, occupation, location, customFields } = req.body;
   
   try {
-    // Parse the JSON string from MySQL
-    const parsed = typeof customFieldsData === 'string' ? JSON.parse(customFieldsData) : customFieldsData;
+    // Start a transaction
+    await pool.query('START TRANSACTION');
     
-    // Convert object {name: value} to array [{name, value}]
-    return Object.entries(parsed).map(([name, value]) => ({
-      name,
-      value
-    }));
+    // Update the customer basic info
+    await pool.query(
+      'UPDATE customers SET name = ?, email = ?, phone = ?, dob = ?, occupation = ?, location = ? WHERE id = ?',
+      [name, email, phone, dob, occupation, location, id]
+    );
+    
+    // Remove existing custom field values for this customer
+    await pool.query('DELETE FROM customer_field_values WHERE customer_id = ?', [id]);
+    
+    // Insert new custom field values
+    if (customFields && Object.keys(customFields).length > 0) {
+      const valuePromises = Object.entries(customFields).map(([fieldId, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+          return pool.query(
+            'INSERT INTO customer_field_values (customer_id, field_id, value) VALUES (?, ?, ?)',
+            [id, fieldId, value]
+          );
+        }
+        return Promise.resolve();
+      });
+      
+      await Promise.all(valuePromises);
+    }
+    
+    // Commit the transaction
+    await pool.query('COMMIT');
+    
+    res.json({ success: true, message: 'Customer updated successfully' });
   } catch (error) {
-    console.warn('Failed to parse custom fields:', customFieldsData, error);
-    return [];
+    // Rollback in case of error
+    await pool.query('ROLLBACK');
+    console.error('Error updating customer:', error);
+    res.status(500).json({ error: 'Failed to update customer' });
   }
-};
+});
+
+// Get customer with custom fields
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Get customer basic info
+    const [customers] = await pool.query('SELECT * FROM customers WHERE id = ?', [id]);
+    
+    if (customers.length === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    
+    const customer = customers[0];
+    
+    // Get custom field values for this customer
+    const [fieldValues] = await pool.query(`
+      SELECT cfv.field_id, cfv.value, cf.name, cf.type 
+      FROM customer_field_values cfv
+      JOIN custom_fields cf ON cfv.field_id = cf.id
+      WHERE cfv.customer_id = ?
+    `, [id]);
+    
+    customer.customFields = fieldValues.map(fv => ({
+      id: fv.field_id,
+      name: fv.name,
+      type: fv.type,
+      value: fv.value
+    }));
+    
+    res.json(customer);
+  } catch (error) {
+    console.error('Error fetching customer:', error);
+    res.status(500).json({ error: 'Failed to fetch customer' });
+  }
+});
 
 // Get all customers
 router.get('/', async (req, res) => {

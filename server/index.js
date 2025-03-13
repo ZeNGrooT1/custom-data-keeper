@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
@@ -37,7 +36,7 @@ app.get('/api/health', async (req, res) => {
 
 // Routes
 app.use('/api/customers', require('./routes/customers'));
-app.use('/api/custom-fields', require('./routes/customFields'));
+app.use('/api/custom-fields', require('./routes/customFields')); // Added custom fields route
 app.use('/api/auth', require('./routes/auth'));
 
 app.listen(PORT, () => {
