@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { customFieldService } from '@/services/customFieldService';
+import customFieldService from '@/services/customFieldService';
 import { toast } from 'sonner';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
