@@ -52,7 +52,10 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-// Define custom field types
+// Import CustomField type
+import type { CustomField } from '../types';
+
+// Form schema
 interface CustomField {
   id: string;
   name: string;

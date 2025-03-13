@@ -1,7 +1,33 @@
-
 import axios from 'axios';
-import { CustomField } from '../types';
-import { parseCustomFieldOptions } from './api';
+import type { CustomField } from '../types';
+
+// Helper function to parse custom field options
+const parseCustomFieldOptions = (field) => {
+  if (!field) return field;
+
+  let options = field.options;
+
+  // If options is a string, try to parse it as JSON
+  if (options && typeof options === 'string') {
+    try {
+      // Handle comma-separated string format
+      if (options.includes(',') && !options.startsWith('[')) {
+        options = options.split(',').map(opt => opt.trim());
+      } else {
+        options = JSON.parse(options);
+      }
+    } catch (e) {
+      console.warn(`Failed to parse options for field ${field.name}:`, e);
+      // Return empty array instead of throwing
+      options = [];
+    }
+  }
+
+  return {
+    ...field,
+    options
+  };
+};
 
 // Create a base URL for the API
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -14,12 +40,12 @@ export async function getAll(): Promise<CustomField[]> {
         Authorization: `Bearer ${localStorage.getItem('token') || 'mock-token-for-development'}`
       }
     });
-    
+
     // Process the response to ensure options are parsed correctly
     return response.data.map(parseCustomFieldOptions);
   } catch (error) {
     console.error('Failed to fetch custom fields:', error);
-    
+
     // Return mock data for development purposes
     return [
       {
