@@ -1,35 +1,46 @@
-
-import { useState, useEffect } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { customFieldService } from '@/services/customFieldService';
+import { toast } from 'sonner';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -38,78 +49,25 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { 
 
-  const handleDeleteField = async (fieldId: string) => {
-    try {
-      setIsLoading(true);
-      await customFieldService.deleteField(fieldId);
-      toast.success('Custom field deleted successfully');
-      loadFields(); // Reload the fields after deletion
-    } catch (error) {
-      console.error('Error deleting custom field:', error);
-      toast.error('Failed to delete custom field');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onSubmit = async (data: FormValues) => {
-    try {
-      setIsLoading(true);
-      
-      // Parse options for select type fields
-      let parsedOptions = null;
-      if (data.type === 'select' && data.options) {
-        parsedOptions = data.options.split(',').map(opt => opt.trim()).filter(opt => opt);
-      }
-
-      const newField = await customFieldService.createField({
-        name: data.name,
-        type: data.type,
-        options: parsedOptions
-      });
-
-      toast.success('Custom field created successfully');
-      setFields([...fields, newField]);
-      setShowAddField(false);
-      form.reset();
-    } catch (error) {
-      console.error('Error creating custom field:', error);
-      toast.error('Failed to create custom field');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { customFieldService } from '@/services/api';
-import { toast } from 'sonner';
-
-const formSchema = z.object({
-  name: z.string().min(2, { message: 'Field name must be at least 2 characters' }),
-  type: z.enum(['text', 'number', 'date', 'select'], { 
-    errorMap: () => ({ message: 'Please select a field type' }) 
-  }),
-  options: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
+// Define custom field types
 interface CustomField {
   id: string;
   name: string;
   type: string;
-  options: string[] | null;
+  options?: string[];
 }
+
+// Define form schema
+const formSchema = z.object({
+  name: z.string().min(2, { message: 'Field name must be at least 2 characters.' }),
+  type: z.string(),
+  options: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface CustomFieldsManagerProps {
   isOpen: boolean;
@@ -147,7 +105,7 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
       setIsLoading(true);
       const fetchedFields = await customFieldService.getAll();
       console.log('Fetched custom fields:', fetchedFields);
-      
+
       // Ensure we only use fields with valid data
       const validFields = fetchedFields.filter(field => 
         field && 
@@ -156,7 +114,7 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
         field.name && 
         field.type
       );
-      
+
       setFields(validFields);
     } catch (error) {
       console.error('Error loading custom fields:', error);
@@ -167,57 +125,43 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
     }
   };
 
-  const handleFormSubmit = async (data: FormValues) => {
+  const handleDeleteField = async (fieldId: string) => {
     try {
       setIsLoading(true);
-      
-      // Process options for select fields
-      const options = data.type === 'select' && data.options
-        ? data.options.split(',').map(opt => opt.trim())
-        : null;
-      
-      const fieldData = {
-        name: data.name,
-        type: data.type,
-        options,
-      };
-      
-      console.log('Creating new field with data:', fieldData);
-      
-      const newField = await customFieldService.create(fieldData);
-      console.log('New field created:', newField);
-      
-      // Only add the field if it has all required properties
-      if (newField && newField.id && newField.name && newField.type) {
-        setFields(prev => [...prev, newField]);
-        toast.success(`Field "${data.name}" created successfully`);
-        setShowAddField(false);
-        form.reset();
-      } else {
-        toast.error('Created field has invalid data');
-      }
+      await customFieldService.deleteField(fieldId);
+      toast.success('Custom field deleted successfully');
+      setFields(fields.filter(field => field.id !== fieldId));
     } catch (error) {
-      console.error('Error adding custom field:', error);
-      toast.error('Failed to create custom field');
+      console.error('Error deleting custom field:', error);
+      toast.error('Failed to delete custom field');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteField = async (id: string) => {
+  const onSubmit = async (data: FormValues) => {
     try {
       setIsLoading(true);
-      await customFieldService.delete(id);
-      
-      // Update local state immediately after successful deletion
-      setFields(prevFields => prevFields.filter(field => field.id !== id));
-      toast.success('Field deleted successfully');
-      
-      // Force a reload of fields to ensure sync with server
-      await loadFields();
+
+      // Parse options for select type fields
+      let parsedOptions = null;
+      if (data.type === 'select' && data.options) {
+        parsedOptions = data.options.split(',').map(opt => opt.trim()).filter(opt => opt);
+      }
+
+      const newField = await customFieldService.createField({
+        name: data.name,
+        type: data.type,
+        options: parsedOptions
+      });
+
+      toast.success('Custom field created successfully');
+      setFields([...fields, newField]);
+      setShowAddField(false);
+      form.reset();
     } catch (error) {
-      console.error('Error deleting custom field:', error);
-      toast.error('Failed to delete custom field');
+      console.error('Error creating custom field:', error);
+      toast.error('Failed to create custom field');
     } finally {
       setIsLoading(false);
     }
@@ -232,7 +176,7 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
             Add, edit, or remove custom fields for customer records.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="my-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium">Current Fields</h3>
@@ -241,7 +185,7 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
               Add Field
             </Button>
           </div>
-          
+
           {isLoading && fields.length === 0 ? (
             <div className="flex justify-center py-8">
               <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -316,18 +260,18 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
             </div>
           )}
         </div>
-        
+
         <Dialog open={showAddField} onOpenChange={setShowAddField}>
           <DialogContent className="animate-slide-in">
             <DialogHeader>
               <DialogTitle>Add Custom Field</DialogTitle>
               <DialogDescription>
-                Create a new custom field for your customer records.
+                Create a new custom field for customer profiles.
               </DialogDescription>
             </DialogHeader>
-            
+
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -335,79 +279,74 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
                     <FormItem>
                       <FormLabel>Field Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Company Size" {...field} />
+                        <Input placeholder="e.g. Company Size" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="type"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Field Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select field type" />
+                            <SelectValue placeholder="Select a field type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="text">Text</SelectItem>
                           <SelectItem value="number">Number</SelectItem>
                           <SelectItem value="date">Date</SelectItem>
-                          <SelectItem value="select">Select (Dropdown)</SelectItem>
+                          <SelectItem value="select">Dropdown</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormDescription>
+                        Choose the type of data this field will store.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 {form.watch('type') === 'select' && (
                   <FormField
                     control={form.control}
                     name="options"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Options</FormLabel>
+                        <FormLabel>Dropdown Options</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Option 1, Option 2, Option 3" 
-                            {...field} 
-                          />
+                          <Input placeholder="Option 1, Option 2, Option 3" {...field} />
                         </FormControl>
+                        <FormDescription>
+                          Enter options separated by commas.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 )}
-                
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setShowAddField(false)} disabled={isLoading}>
+
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowAddField(false)}>
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <div className="h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Adding...
-                      </>
-                    ) : 'Add Field'}
+                    {isLoading ? 'Creating...' : 'Create Field'}
                   </Button>
-                </div>
+                </DialogFooter>
               </form>
             </Form>
           </DialogContent>
         </Dialog>
-        
-        <div className="flex justify-end">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Close
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
