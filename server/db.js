@@ -12,4 +12,18 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
+// Test the connection
+const testConnection = async () => {
+  try {
+    const connection = await pool.getConnection();
+    console.log('Database connection established successfully');
+    connection.release();
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    // Don't exit the process, allow the app to use mock data when DB is not available
+  }
+};
+
+testConnection();
+
 module.exports = pool;
