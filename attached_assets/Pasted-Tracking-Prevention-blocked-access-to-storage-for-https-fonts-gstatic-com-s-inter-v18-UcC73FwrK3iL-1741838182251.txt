@@ -1,0 +1,61 @@
+Tracking Prevention blocked access to storage for https://fonts.gstatic.com/s/inter/v18/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2.
+localhost/:1 
+ Tracking Prevention blocked access to storage for https://fonts.gstatic.com/s/inter/v18/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2.
+:5000/api/customers:1 
+ 
+ Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+api.ts:38 
+ API Error: 
+AxiosError
+code
+: 
+"ERR_BAD_RESPONSE"
+config
+: 
+{transitional: {…}, adapter: Array(2), transformRequest: Array(1), transformResponse: Array(1), timeout: 10000, …}
+message
+: 
+"Request failed with status code 500"
+name
+: 
+"AxiosError"
+request
+: 
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 10000, withCredentials: false, upload: XMLHttpRequestUpload, …}
+response
+: 
+{data: {…}, status: 500, statusText: 'Internal Server Error', headers: AxiosHeaders, config: {…}, …}
+stack
+: 
+"AxiosError: Request failed with status code 500\n    at settle (http://localhost:8080/node_modules/.vite/deps/axios.js?v=10a9b726:1192:12)\n    at XMLHttpRequest.onloadend (http://localhost:8080/node_modules/.vite/deps/axios.js?v=10a9b726:1409:7)\n    at Axios.request (http://localhost:8080/node_modules/.vite/deps/axios.js?v=10a9b726:1769:41)\n    at async Object.getAll (http://localhost:8080/src/services/api.ts:156:24)"
+[[Prototype]]
+: 
+Error
+(anonymous)	@	api.ts:38
+api.ts:181 
+ Error fetching customers, using mock data: 
+AxiosError
+code
+: 
+"ERR_BAD_RESPONSE"
+config
+: 
+{transitional: {…}, adapter: Array(2), transformRequest: Array(1), transformResponse: Array(1), timeout: 10000, …}
+message
+: 
+"Request failed with status code 500"
+name
+: 
+"AxiosError"
+request
+: 
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 10000, withCredentials: false, upload: XMLHttpRequestUpload, …}
+response
+: 
+{data: {…}, status: 500, statusText: 'Internal Server Error', headers: AxiosHeaders, config: {…}, …}
+stack
+: 
+"AxiosError: Request failed with status code 500\n    at settle (http://localhost:8080/node_modules/.vite/deps/axios.js?v=10a9b726:1192:12)\n    at XMLHttpRequest.onloadend (http://localhost:8080/node_modules/.vite/deps/axios.js?v=10a9b726:1409:7)\n    at Axios.request (http://localhost:8080/node_modules/.vite/deps/axios.js?v=10a9b726:1769:41)\n    at async Object.getAll (http://localhost:8080/src/services/api.ts:156:24)"
+[[Prototype]]
+: 
+Error
