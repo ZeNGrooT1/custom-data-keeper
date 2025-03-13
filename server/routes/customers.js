@@ -8,20 +8,20 @@ const pool = require('../db');
 router.post('/:id', async (req, res) => {
   const { id } = req.params;
   const { name, email, phone, dob, occupation, location, customFields } = req.body;
-  
+
   try {
     // Start a transaction
     await pool.query('START TRANSACTION');
-    
+
     // Update the customer basic info
     await pool.query(
       'UPDATE customers SET name = ?, email = ?, phone = ?, dob = ?, occupation = ?, location = ? WHERE id = ?',
       [name, email, phone, dob, occupation, location, id]
     );
-    
+
     // Remove existing custom field values for this customer
     await pool.query('DELETE FROM customer_field_values WHERE customer_id = ?', [id]);
-    
+
     // Insert new custom field values
     if (customFields && Object.keys(customFields).length > 0) {
       const valuePromises = Object.entries(customFields).map(([fieldId, value]) => {
@@ -33,13 +33,13 @@ router.post('/:id', async (req, res) => {
         }
         return Promise.resolve();
       });
-      
+
       await Promise.all(valuePromises);
     }
-    
+
     // Commit the transaction
     await pool.query('COMMIT');
-    
+
     res.json({ success: true, message: 'Customer updated successfully' });
   } catch (error) {
     // Rollback in case of error
@@ -52,17 +52,17 @@ router.post('/:id', async (req, res) => {
 // Get customer with custom fields
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     // Get customer basic info
     const [customers] = await pool.query('SELECT * FROM customers WHERE id = ?', [id]);
-    
+
     if (customers.length === 0) {
       return res.status(404).json({ error: 'Customer not found' });
     }
-    
+
     const customer = customers[0];
-    
+
     // Get custom field values for this customer
     const [fieldValues] = await pool.query(`
       SELECT cfv.field_id, cfv.value, cf.name, cf.type 
@@ -70,14 +70,14 @@ router.get('/:id', async (req, res) => {
       JOIN custom_fields cf ON cfv.field_id = cf.id
       WHERE cfv.customer_id = ?
     `, [id]);
-    
+
     customer.customFields = fieldValues.map(fv => ({
       id: fv.field_id,
       name: fv.name,
       type: fv.type,
       value: fv.value
     }));
-    
+
     res.json(customer);
   } catch (error) {
     console.error('Error fetching customer:', error);
@@ -97,7 +97,7 @@ router.get('/', async (req, res) => {
       GROUP BY c.id
       ORDER BY c.created_at DESC
     `);
-    
+
     const formattedCustomers = customers.map(customer => ({
       id: customer.id,
       name: customer.name,
@@ -110,7 +110,7 @@ router.get('/', async (req, res) => {
       updatedAt: customer.updated_at,
       customFields: formatCustomFields(customer.custom_fields)
     }));
-    
+
     res.json(formattedCustomers);
   } catch (error) {
     console.error('Error fetching customers:', error);
@@ -122,23 +122,23 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const [customer] = await pool.query('SELECT * FROM customers WHERE id = ?', [req.params.id]);
-    
+
     if (customer.length === 0) {
       return res.status(404).json({ error: 'Customer not found' });
     }
-    
+
     const [fieldValues] = await pool.query(`
       SELECT cf.id, cf.name, cf.type, cfv.value
       FROM customer_field_values cfv
       JOIN custom_fields cf ON cfv.field_id = cf.id
       WHERE cfv.customer_id = ?
     `, [req.params.id]);
-    
+
     const customFields = fieldValues.map(field => ({
       name: field.name,
       value: field.value
     }));
-    
+
     res.json({
       ...customer[0],
       customFields
@@ -152,7 +152,7 @@ router.get('/:id', async (req, res) => {
 // Create a new customer
 router.post('/', async (req, res) => {
   const { name, dob, phone, email, occupation, location, customFields } = req.body;
-  
+
   let formattedDob = null;
   if (dob) {
     const date = new Date(dob);
@@ -160,19 +160,19 @@ router.post('/', async (req, res) => {
       formattedDob = date.toISOString().split('T')[0];
     }
   }
-  
+
   const connection = await pool.getConnection();
-  
+
   try {
     await connection.beginTransaction();
-    
+
     const [result] = await connection.query(
       'INSERT INTO customers (name, dob, phone, email, occupation, location) VALUES (?, ?, ?, ?, ?, ?)',
       [name, formattedDob, phone, email, occupation, location]
     );
-    
+
     const customerId = result.insertId;
-    
+
     if (customFields && Array.isArray(customFields) && customFields.length > 0) {
       const validFieldValues = customFields
         .filter(field => field && field.id && !isNaN(parseInt(field.id, 10)))
@@ -181,7 +181,7 @@ router.post('/', async (req, res) => {
           parseInt(field.id, 10),
           field.value
         ]);
-      
+
       if (validFieldValues.length > 0) {
         await connection.query(
           'INSERT INTO customer_field_values (customer_id, field_id, value) VALUES ?',
@@ -189,9 +189,9 @@ router.post('/', async (req, res) => {
         );
       }
     }
-    
+
     await connection.commit();
-    
+
     res.status(201).json({
       id: customerId,
       name,
@@ -217,7 +217,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const { name, dob, phone, email, occupation, location, customFields } = req.body;
   const customerId = req.params.id;
-  
+
   let formattedDob = null;
   if (dob) {
     const date = new Date(dob);
@@ -225,19 +225,19 @@ router.put('/:id', async (req, res) => {
       formattedDob = date.toISOString().split('T')[0];
     }
   }
-  
+
   const connection = await pool.getConnection();
-  
+
   try {
     await connection.beginTransaction();
-    
+
     await connection.query(
       'UPDATE customers SET name = ?, dob = ?, phone = ?, email = ?, occupation = ?, location = ?, updated_at = NOW() WHERE id = ?',
       [name, formattedDob, phone, email, occupation, location, customerId]
     );
-    
+
     await connection.query('DELETE FROM customer_field_values WHERE customer_id = ?', [customerId]);
-    
+
     if (customFields && Array.isArray(customFields) && customFields.length > 0) {
       const validFieldValues = customFields
         .filter(field => field && field.id && !isNaN(parseInt(field.id, 10)))
@@ -246,7 +246,7 @@ router.put('/:id', async (req, res) => {
           parseInt(field.id, 10),
           field.value
         ]);
-      
+
       if (validFieldValues.length > 0) {
         await connection.query(
           'INSERT INTO customer_field_values (customer_id, field_id, value) VALUES ?',
@@ -254,9 +254,9 @@ router.put('/:id', async (req, res) => {
         );
       }
     }
-    
+
     await connection.commit();
-    
+
     res.json({
       id: customerId,
       name,
@@ -280,15 +280,15 @@ router.put('/:id', async (req, res) => {
 // Delete a customer
 router.delete('/:id', async (req, res) => {
   const connection = await pool.getConnection();
-  
+
   try {
     await connection.beginTransaction();
-    
+
     await connection.query('DELETE FROM customer_field_values WHERE customer_id = ?', [req.params.id]);
     await connection.query('DELETE FROM customers WHERE id = ?', [req.params.id]);
-    
+
     await connection.commit();
-    
+
     res.status(204).send();
   } catch (error) {
     await connection.rollback();
@@ -302,7 +302,7 @@ router.delete('/:id', async (req, res) => {
 // Search customers
 router.get('/search/:query', async (req, res) => {
   const searchQuery = `%${req.params.query}%`;
-  
+
   try {
     const [customers] = await pool.query(`
       SELECT c.*, 
@@ -314,7 +314,7 @@ router.get('/search/:query', async (req, res) => {
       GROUP BY c.id
       ORDER BY c.created_at DESC
     `, [searchQuery, searchQuery, searchQuery]);
-    
+
     const formattedCustomers = customers.map(customer => ({
       id: customer.id,
       name: customer.name,
@@ -327,7 +327,7 @@ router.get('/search/:query', async (req, res) => {
       updatedAt: customer.updated_at,
       customFields: formatCustomFields(customer.custom_fields)
     }));
-    
+
     res.json(formattedCustomers);
   } catch (error) {
     console.error('Error searching customers:', error);
@@ -335,4 +335,5 @@ router.get('/search/:query', async (req, res) => {
   }
 });
 
+// Export the router
 module.exports = router;
