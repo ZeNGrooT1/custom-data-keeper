@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Customer, CustomField, generateExcelData } from '@/utils/data';
 import { useToast } from '@/hooks/use-toast';
-import { customFieldService } from '@/services/api';
+import customFieldService from '@/services/customFieldService';
 
 interface ExcelExportProps {
   isOpen: boolean;
