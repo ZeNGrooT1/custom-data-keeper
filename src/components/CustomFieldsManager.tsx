@@ -165,8 +165,13 @@ export function CustomFieldsManager({ isOpen, onClose }: CustomFieldsManagerProp
     try {
       setIsLoading(true);
       await customFieldService.delete(id);
-      setFields(fields.filter(field => field.id !== id));
+      
+      // Update local state immediately after successful deletion
+      setFields(prevFields => prevFields.filter(field => field.id !== id));
       toast.success('Field deleted successfully');
+      
+      // Force a reload of fields to ensure sync with server
+      await loadFields();
     } catch (error) {
       console.error('Error deleting custom field:', error);
       toast.error('Failed to delete custom field');
